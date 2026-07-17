@@ -1,12 +1,24 @@
-"""Central configuration — the ONLY place environment variables are read.
+"""Central configuration — the only place environment variables are read.
 
-The package talks to one kind of endpoint: any OpenAI-compatible API. The standard
-OpenAI endpoint is the default; set OPENAI_BASE_URL to point at a compatible gateway
-(an Azure-hosted proxy, LiteLLM, vLLM, a corporate gateway...). Switching endpoints
-is a config change, never a code change.
+The package talks to one kind of endpoint: any **OpenAI-compatible API**. The
+standard OpenAI endpoint is the default; setting ``OPENAI_BASE_URL`` points the
+whole pipeline at a compatible gateway instead (an Azure-hosted proxy, LiteLLM,
+vLLM, a corporate gateway...). Switching endpoints is a config change, never a
+code change.
 
-Settings load lazily on first use, so importing the package never requires a key —
-only actually calling an LLM does. Use `configure(...)` to set values from code.
+Settings load **lazily** on first use, so importing the package never requires a
+key — only actually calling an LLM does. Three ways to configure, in order of
+precedence:
+
+1. ``configure(...)`` from code (highest — overrides everything),
+2. real environment variables,
+3. a ``.env`` file in the working directory (lowest — never overrides real env).
+
+Example:
+    >>> from contextual_rag import configure, get_settings
+    >>> configure(api_key="sk-...", chat_model="gpt-5.4-mini")
+    >>> get_settings().chat_model
+    'gpt-5.4-mini'
 """
 
 from __future__ import annotations
@@ -26,63 +38,76 @@ class ConfigError(RuntimeError):
 
 @dataclass(frozen=True)
 class Settings:
-    """Resolved configuration. `chat_model` / `embed_model` are whatever names the
-    chosen endpoint expects — the rest of the package just passes them through."""
+    """Resolved, immutable configuration for the whole pipeline.
 
-    # Endpoint. An empty base_url means the standard OpenAI API. The api_key may be
-    # blank for keyless gateways (the client supplies a placeholder the server ignores).
+    Model names are whatever the chosen endpoint expects — the rest of the
+    package passes them through verbatim. That uniformity is what keeps
+    :mod:`contextual_rag.llm` the single endpoint seam.
+
+    Attributes:
+        api_key: API key. May be blank for keyless gateways (the client then
+            sends a placeholder the server ignores).
+        base_url: Custom OpenAI-compatible endpoint. Empty = standard OpenAI.
+        chat_model: Model used for situating blurbs, LLM reranking and answers.
+        embed_model: Embedding model. Pick a multilingual-strong one for
+            non-English corpora; the vector dimension is read dynamically.
+        parse_model: Vision model for PDF page transcription. Empty = falls
+            back to ``chat_model``.
+        parser: PDF parser backend, ``"vision"`` or ``"docintel"``.
+        docintel_endpoint: Azure Document Intelligence endpoint (docintel only).
+        docintel_key: Azure Document Intelligence key (docintel only).
+        vector_dir: Where the vector store persists. Empty = ``./.contextual_rag``.
+        rerank_model: Model name for a dedicated hosted reranker (endpoint mode).
+        rerank_base_url: Base URL of the hosted reranker.
+        rerank_api_key: Key for the hosted reranker (optional).
+        retrieval_rerank: Default rerank mode at query time:
+            ``"llm"`` | ``"endpoint"`` | ``"off"``.
+        context_doc_cap: Documents at/under this many tokens are situated
+            against the whole document (Anthropic's recipe verbatim); larger
+            ones switch to excerpt mode. Keep ≈20k tokens under the chat
+            model's usable input — 250k fits the GPT-5 family, a 128k-context
+            model needs ~100k. Too high = hard API errors mid-ingestion.
+        context_part_tokens: Target size of one excerpt in excerpt mode.
+        context_concurrency: Parallel blurb calls per prompt-prefix group
+            (1 = fully sequential; raise within the key's rate limits).
+        chat_temperature: Default generation temperature (overridable per call).
+    """
+
     api_key: str = ""
     base_url: str = ""
 
     chat_model: str = "gpt-5.4-mini"
     embed_model: str = "text-embedding-3-large"
-    # Vision model used to parse PDF pages (render → image → Markdown+LaTeX).
-    # Should be a strong vision-capable model; falls back to chat_model if unset.
     parse_model: str = ""
 
-    # Parser backend: "vision" (render → vision LLM, default, works anywhere the LLM
-    # does) or "docintel" (Azure Document Intelligence — deterministic, in-tenant).
     parser: str = "vision"
     docintel_endpoint: str = ""
     docintel_key: str = ""
 
-    # Where the embedded vector store persists (empty -> ./.contextual_rag).
     vector_dir: str = ""
 
-    # Reranker seam (optional, no GPU). Empty rerank_model -> no dedicated reranker;
-    # "llm" mode still works through the normal chat endpoint.
     rerank_model: str = ""
     rerank_base_url: str = ""
     rerank_api_key: str = ""
-    # Retrieval-time reranking of fused candidates: "llm" (RankGPT-style, one cheap
-    # call through the chat endpoint), "endpoint" (the dedicated reranker above),
-    # or "off". One of the biggest published retrieval wins.
     retrieval_rerank: str = "llm"
 
-    # Contextualizer guard (see contextual.py). Documents at/under the cap are
-    # situated against the WHOLE document (Anthropic's recipe verbatim); larger ones
-    # against head+region excerpts of ~context_part_tokens. Keep the cap ≈20k tokens
-    # under the chat model's usable input (250k fits the GPT-5 family; a 128k-context
-    # model needs ~100k). Too high = hard API errors mid-ingestion.
     context_doc_cap: int = 250_000
     context_part_tokens: int = 48_000
-    # Blurb calls per prompt-prefix group run 1 (cache-priming) + this many in
-    # parallel. 1 = fully sequential; raise only within the key's rate-limit comfort.
     context_concurrency: int = 4
 
-    # Generation default (overridable per call in llm.chat()).
     chat_temperature: float = 0.2
 
 
 def _from_env() -> Settings:
-    defaults = Settings()
+    """Build a :class:`Settings` from the environment, defaulting field by field."""
+    d = Settings()  # source of default values — never duplicated here
     return Settings(
         api_key=os.getenv("OPENAI_API_KEY", ""),
         base_url=os.getenv("OPENAI_BASE_URL", ""),
-        chat_model=os.getenv("CHAT_MODEL", defaults.chat_model),
-        embed_model=os.getenv("EMBED_MODEL", defaults.embed_model),
+        chat_model=os.getenv("CHAT_MODEL", d.chat_model),
+        embed_model=os.getenv("EMBED_MODEL", d.embed_model),
         parse_model=os.getenv("PARSE_MODEL", ""),
-        parser=os.getenv("PARSER", defaults.parser).strip().lower(),
+        parser=os.getenv("PARSER", d.parser).strip().lower(),
         docintel_endpoint=os.getenv("DOCINTEL_ENDPOINT", ""),
         docintel_key=os.getenv("DOCINTEL_KEY", ""),
         vector_dir=os.getenv("VECTOR_DIR", ""),
@@ -90,14 +115,13 @@ def _from_env() -> Settings:
         rerank_base_url=os.getenv("RERANK_BASE_URL", ""),
         rerank_api_key=os.getenv("RERANK_API_KEY", ""),
         retrieval_rerank=(os.getenv("RETRIEVAL_RERANK", "").strip().lower()
-                          or defaults.retrieval_rerank),
-        context_doc_cap=int(os.getenv("CONTEXT_DOC_CAP", str(defaults.context_doc_cap))),
+                          or d.retrieval_rerank),
+        context_doc_cap=int(os.getenv("CONTEXT_DOC_CAP", str(d.context_doc_cap))),
         context_part_tokens=int(os.getenv("CONTEXT_PART_TOKENS",
-                                          str(defaults.context_part_tokens))),
+                                          str(d.context_part_tokens))),
         context_concurrency=int(os.getenv("CONTEXT_CONCURRENCY",
-                                          str(defaults.context_concurrency))),
-        chat_temperature=float(os.getenv("CHAT_TEMPERATURE",
-                                         str(defaults.chat_temperature))),
+                                          str(d.context_concurrency))),
+        chat_temperature=float(os.getenv("CHAT_TEMPERATURE", str(d.chat_temperature))),
     )
 
 
@@ -105,7 +129,13 @@ _settings: Settings | None = None
 
 
 def get_settings() -> Settings:
-    """The active settings, loaded from the environment on first use."""
+    """Return the active settings, loading them from the environment on first use.
+
+    Returns:
+        The process-wide :class:`Settings` instance. The same object is returned
+        until :func:`configure` or :func:`reset_settings` replaces it — modules
+        that cache per-settings state (the LLM client) key off its identity.
+    """
     global _settings
     if _settings is None:
         _settings = _from_env()
@@ -113,14 +143,27 @@ def get_settings() -> Settings:
 
 
 def configure(**overrides) -> Settings:
-    """Override settings from code (e.g. `configure(api_key=..., chat_model=...)`).
-    Unknown keys raise; returns the new active settings."""
+    """Override settings from code, e.g. ``configure(api_key="sk-...")``.
+
+    Values not overridden keep their current value (env-loaded or previously
+    configured). The LLM client is rebuilt on the next call automatically.
+
+    Args:
+        **overrides: Any :class:`Settings` field name → new value.
+
+    Returns:
+        The new active :class:`Settings`.
+
+    Raises:
+        TypeError: If an override is not a :class:`Settings` field.
+    """
     global _settings
     _settings = replace(get_settings(), **overrides)
     return _settings
 
 
 def reset_settings() -> None:
-    """Drop overrides and reload from the environment on next use (mainly for tests)."""
+    """Drop all overrides; the next :func:`get_settings` reloads from the
+    environment. Mainly useful in tests."""
     global _settings
     _settings = None

@@ -1,13 +1,26 @@
 """Structure-aware recursive Markdown chunker.
 
-Cuts on real structure (Markdown headings, then paragraphs/sentences), size-bound to
-~512 tokens, adds a small overlap so a sentence straddling a boundary survives, and
-carries provenance (doc + page + section) on every chunk. Semantic/embedding chunking
-is deliberately NOT used — slower, not consistently better; the cut is low-leverage,
-the gains come later (contextual retrieval).
+The cutting strategy, in order of preference:
 
-Atomic units are never split: fenced code, display math ($$…$$), and HTML tables stay
-whole. LaTeX is kept inline as text. Output is `Chunk` objects ready to embed.
+1. **Headings** — a chunk never straddles a section boundary; the heading
+   trail (``header_path``) rides along as provenance.
+2. **Paragraphs** — packed greedily up to ``target_tokens``.
+3. **Sentences** — an oversized paragraph is split at sentence boundaries.
+4. **Hard character cuts** — only for a single sentence larger than the target.
+
+Three kinds of blocks are **atomic** and never split, even when oversized:
+fenced code, display math (``$$…$$``), and HTML tables — a half-formula or a
+torn table row is worse than an oversized chunk. A small sentence-snapped
+overlap is prepended to each chunk (skipped across atomic blocks) so a sentence
+straddling a boundary survives in at least one piece.
+
+Semantic/embedding-based chunking is deliberately *not* used: it is slower and
+not consistently better. The cut is low-leverage — the retrieval gains come
+later, from contextualization.
+
+Every chunk carries provenance (doc id, pages, section trail) and every
+character of the source lands in exactly one chunk's body, so nothing is lost,
+unsearchable, or un-citable.
 """
 
 from __future__ import annotations
@@ -27,16 +40,23 @@ _SENTENCE = re.compile(r"(?<=[.!?])\s+")
 
 @dataclass
 class _Block:
+    """One structural unit of the document (a heading line or a content run).
+
+    ``start``/``end`` are char offsets into the source Markdown — they are what
+    lets page provenance survive all later splitting and regrouping.
+    """
+
     kind: str  # "heading" | "content"
     text: str
     start: int
     end: int
     level: int = 0
     heading_text: str = ""
-    atomic: bool = False  # code / $$math$$ / table — never split, even if over target
+    atomic: bool = False  # code / $$math$$ / table — never split, even if oversized
 
 
 def _lines_with_offsets(text: str):
+    """Yield ``(char_offset, line)`` for every line, keepends preserved."""
     pos = 0
     for line in text.splitlines(keepends=True):
         yield pos, line
@@ -44,8 +64,9 @@ def _lines_with_offsets(text: str):
 
 
 def _blocks(markdown: str) -> list[_Block]:
-    """Split Markdown into heading + content blocks, each tagged with its char span.
-    Atomic constructs (code/math/table) are consumed whole."""
+    """Split Markdown into heading + content blocks, each tagged with its char
+    span. Atomic constructs (code / display math / HTML tables) are consumed
+    whole, from their opening line to their closing delimiter."""
     lines = list(_lines_with_offsets(markdown))
     n = len(lines)
     blocks: list[_Block] = []
@@ -117,7 +138,8 @@ def _blocks(markdown: str) -> list[_Block]:
 
 
 def _sections(blocks: list[_Block]):
-    """Group content blocks under their heading path. Content before any heading gets []."""
+    """Group content blocks under their heading path (a heading stack walk).
+    Content before any heading gets path ``[]``."""
     stack: list[tuple[int, str]] = []
     path: list[str] = []
     current: list[_Block] = []
@@ -135,9 +157,9 @@ def _sections(blocks: list[_Block]):
                 stack.pop()
             stack.append((b.level, b.heading_text))
             path[:] = [h[1] for h in stack]
-            # Keep the heading line in the body too, not only in the path: a chunk must
-            # carry every character of the source so nothing is lost, searchable, or
-            # un-citable — even if a line was mis-promoted to a heading upstream.
+            # Keep the heading line in the body too, not only in the path: a chunk
+            # must carry every character of the source — even a line that was
+            # mis-promoted to a heading upstream must stay searchable and citable.
             current.append(_Block("content", b.text, b.start, b.end))
         else:
             current.append(b)
@@ -146,13 +168,15 @@ def _sections(blocks: list[_Block]):
 
 
 def _hard_split(text: str, target: int, count) -> list[str]:
+    """Last resort: cut ``text`` into ~target-token pieces by character count."""
     chars = max(1, int(len(text) / max(1, count(text)) * target))
     return [text[i:i + chars] for i in range(0, len(text), chars)] or [text]
 
 
 def _split_block(b: _Block, target: int, count) -> list[_Block]:
-    """Split one oversized block into <=target pieces (sentences, then hard chars).
-    Pieces inherit the parent span, so page provenance stays correct."""
+    """Split one oversized non-atomic block into <= target-token pieces —
+    sentences first, hard character cuts only within a single giant sentence.
+    Pieces inherit the parent's char span, so page provenance stays correct."""
     pieces: list[_Block] = []
     cur: list[str] = []
     cur_tok = 0
@@ -179,6 +203,11 @@ def _split_block(b: _Block, target: int, count) -> list[_Block]:
 
 
 def _pack(blocks: list[_Block], target: int, min_tokens: int, count) -> list[list[_Block]]:
+    """Greedily pack a section's blocks into chunk-sized groups.
+
+    Oversized blocks either stand alone (atomic) or get split first. A trailing
+    group smaller than ``min_tokens`` is folded into its predecessor, so no
+    document ends on a fragment."""
     groups: list[list[_Block]] = []
     cur: list[_Block] = []
     cur_tok = 0
@@ -210,7 +239,8 @@ def _pack(blocks: list[_Block], target: int, min_tokens: int, count) -> list[lis
 
 
 def _tail(text: str, overlap_tokens: int, count) -> str:
-    """Trailing slice of `text` ~overlap_tokens long, snapped to sentence boundaries."""
+    """Trailing slice of ``text`` ~overlap_tokens long, snapped to sentence
+    boundaries (never cuts mid-sentence)."""
     if overlap_tokens <= 0 or not text:
         return ""
     sentences = _SENTENCE.split(text)
@@ -223,6 +253,7 @@ def _tail(text: str, overlap_tokens: int, count) -> str:
 
 
 def _pages_for(spans, page_offsets) -> list[int]:
+    """Map char spans back to page numbers via interval overlap."""
     if not page_offsets:
         return []
     pages = set()
@@ -244,10 +275,27 @@ def chunk_markdown(
     count_tokens=_default_count,
     page_offsets=None,
 ) -> list[Chunk]:
-    """Chunk a Markdown string into provenance-tagged `Chunk`s.
+    """Chunk a Markdown string into provenance-tagged :class:`Chunk` objects.
 
-    `page_offsets` (list of (page_no, start, end) char spans) maps chunks back to pages;
-    pass it for page provenance, omit it for raw text. `count_tokens` is injectable.
+    Args:
+        markdown: The document text. Empty/whitespace-only yields ``[]``.
+        doc_id: Identifier stamped on every chunk (usually the filename).
+        domain_id: Collection the chunks will belong to.
+        target_tokens: Soft size target per chunk. Only atomic blocks
+            (code / display math / HTML tables) may exceed it.
+        overlap_tokens: Sentence-snapped overlap carried from the previous
+            chunk (0 disables; skipped across atomic blocks).
+        min_tokens: A final chunk smaller than this is folded into its
+            predecessor.
+        count_tokens: Injectable token counter ``(str) -> int``. Defaults to
+            tiktoken when available, a character heuristic otherwise.
+        page_offsets: Optional ``[(page_no, start, end), ...]`` char spans
+            mapping the Markdown back to source pages. Pass it for page
+            provenance; omit it for raw text.
+
+    Returns:
+        The document's chunks, in reading order, ``chunk_id`` =
+        ``"<doc_id>::<index>"``.
     """
     sections = _sections(_blocks(markdown or ""))
     chunks: list[Chunk] = []
@@ -259,8 +307,8 @@ def chunk_markdown(
         for gi, group in enumerate(groups):
             body = "\n\n".join(b.text for b in group)
             atomic = len(group) == 1 and group[0].atomic
-            # Skip overlap across an atomic block: copying a formula/code/table fragment
-            # forward would duplicate it and tear it apart.
+            # Skip overlap across an atomic block: copying a formula/code/table
+            # fragment forward would duplicate it and tear it apart.
             use_overlap = gi > 0 and prev_body and not prev_atomic and not atomic
             prefix = _tail(prev_body, overlap_tokens, count_tokens) if use_overlap else ""
             text = f"{prefix}\n\n{body}" if prefix else body
@@ -291,7 +339,23 @@ def chunk_parsed_doc(
     min_tokens: int = 64,
     count_tokens=_default_count,
 ) -> list[Chunk]:
-    """Chunk a parser `ParsedDoc`, deriving page provenance from its per-page Markdown."""
+    """Chunk a parsed document, deriving page provenance automatically.
+
+    Args:
+        doc: Anything with ``page_markdown`` (list of per-page Markdown
+            strings) and optionally ``filename`` — e.g. a
+            :class:`~contextual_rag.parsing.ParsedDoc`.
+        domain_id: Collection the chunks will belong to.
+        target_tokens: Soft size target per chunk (see :func:`chunk_markdown`).
+        overlap_tokens: Sentence-snapped overlap between chunks.
+        min_tokens: Minimum size of the final chunk.
+        count_tokens: Injectable token counter.
+
+    Returns:
+        The document's chunks with page numbers derived from the per-page
+        Markdown boundaries — or with ``pages=[]`` when the parser could not
+        provide genuinely per-page Markdown (see below).
+    """
     sep = "\n\n"
     parts: list[str] = []
     offsets: list[tuple[int, int, int]] = []
@@ -301,6 +365,13 @@ def chunk_parsed_doc(
         offsets.append((page_no, pos, pos + len(page_md)))
         parts.append(page_md)
         pos += len(page_md) + len(sep)
+    # Page provenance is only real when the parser delivered one Markdown
+    # element per page. A backend returning a single unified blob for a
+    # multi-page document (Azure Document Intelligence does) would otherwise
+    # stamp page 1 on every chunk — actively wrong citations. No offsets means
+    # pages=[] and citations honestly omit the page number.
+    if len(parts) != getattr(doc, "pages", len(parts)):
+        offsets = None
     return chunk_markdown(
         sep.join(parts),
         doc_id=getattr(doc, "filename", "document"),

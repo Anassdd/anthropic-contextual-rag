@@ -6,8 +6,11 @@ excerpt mode for oversized documents, and cache-aware concurrency.
 
 import threading
 
-from contextual_rag import chunk_markdown, llm  # noqa: F401 (llm patched via monkeypatch)
-from contextual_rag import contextual
+from contextual_rag import (  # noqa: F401 (llm patched via monkeypatch)
+    chunk_markdown,
+    contextual,
+    llm,
+)
 
 DOC = "# Intro\n\nThis paper studies Hölder inequalities.\n\n## Methods\n\nWe use convexity."
 
@@ -159,7 +162,8 @@ def test_excerpt_batches_share_prefix_and_cover_chunks(monkeypatch):
     doc = _big_doc()
     chunks = chunk_markdown(doc, doc_id="d", target_tokens=60)
     out, prompts = _run_excerpted(monkeypatch, doc, chunks)
-    assert len(out) == len(chunks) and all(cc.chunk is c for cc, c in zip(out, chunks))
+    assert len(out) == len(chunks)
+    assert all(cc.chunk is c for cc, c in zip(out, chunks, strict=True))
     prefixes = [_prefix(p) for p in prompts]
     distinct = list(dict.fromkeys(prefixes))
     assert 1 < len(distinct) < len(chunks), f"expected several shared batches, got {len(distinct)}"

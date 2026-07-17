@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anthropic-contextual-rag"
-version = "0.1.0"
+version = "0.2.0"
 description = "Anthropic-style Contextual Retrieval as a reusable RAG package: chunk → LLM-situate → embed + BM25 → RRF → rerank → grounded, source-cited answers. Works with any OpenAI-compatible endpoint."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -19,22 +19,49 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "openai>=1.40",
+    # >=1.50: the max_tokens→max_completion_tokens retry in llm.py needs the
+    # SDK to accept the newer kwarg (absent before openai 1.45).
+    "openai>=1.50",
     "python-dotenv>=1.0",
     "chromadb>=0.5",
 ]
 
 [project.optional-dependencies]
-# PDF ingestion via the vision parser (render pages locally, transcribe with a vision LLM).
-pdf = ["pypdfium2>=4.30", "pillow>=10"]
+# PDF ingestion via the vision parser (render pages locally, transcribe with a
+# vision LLM). pypdfium2>=5: the figure check uses PdfObject.get_bounds(),
+# which does not exist in 4.x.
+pdf = ["pypdfium2>=5", "pillow>=10"]
 # PDF ingestion via Azure Document Intelligence (deterministic, in-tenant).
 docintel = ["azure-ai-documentintelligence>=1.0"]
 # Exact token counting for the chunker (falls back to a heuristic without it).
 tokens = ["tiktoken>=0.7"]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.urls]
+"Technique (Anthropic blog)" = "https://www.anthropic.com/news/contextual-retrieval"
+"Cookbook (Anthropic)" = "https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/contextual_rag"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I import order, B bugbear, UP modernize, SIM simplify
+select = ["E", "W", "F", "I", "B", "UP", "SIM"]
+ignore = [
+    "E731",  # lambda assignments — used deliberately for tiny inline token counters
+    "SIM105",  # try/except/pass is clearer than contextlib.suppress in hot paths
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test fixtures carry long prose/formula lines on purpose.
+"tests/*" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["contextual_rag"]

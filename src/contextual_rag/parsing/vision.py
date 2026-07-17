@@ -80,9 +80,7 @@ def _is_clean_prose(text: str) -> bool:
         return False
     if _legibility(t) < _MIN_LEGIBILITY:
         return False
-    if _MATH.search(t):
-        return False
-    return True
+    return not _MATH.search(t)
 
 
 def _page_text(page) -> str:
@@ -167,8 +165,8 @@ def _has_figure(page) -> bool:
     for obj in objs:
         if obj.type == pdfium_c.FPDF_PAGEOBJ_IMAGE:
             try:
-                l, b, r, t = obj.get_bounds()  # images expose get_bounds, not get_pos
-                img_frac += max(0.0, r - l) * max(0.0, t - b) / page_area
+                x0, y0, x1, y1 = obj.get_bounds()  # images expose get_bounds, not get_pos
+                img_frac += max(0.0, x1 - x0) * max(0.0, y1 - y0) / page_area
             except Exception:
                 img_frac += _MIN_IMG_AREA  # unknown size -> assume significant
         elif obj.type == pdfium_c.FPDF_PAGEOBJ_PATH:
@@ -182,7 +180,16 @@ def _route_to_text(page, text: str) -> bool:
 
 
 def render_pages(data: bytes, *, scale: float = 2.0, max_pages: int | None = None):
-    """Render PDF pages to PNG bytes (for display / vision). Returns (pngs, total)."""
+    """Render PDF pages to PNG bytes (for display or vision calls).
+
+    Args:
+        data: The PDF file bytes.
+        scale: Render scale (2.0 ≈ 144 dpi — sharp enough for dense text).
+        max_pages: Render at most this many pages (None = all).
+
+    Returns:
+        ``(png_bytes_list, total_page_count)``.
+    """
     import pypdfium2 as pdfium
 
     pdf = pdfium.PdfDocument(data)
@@ -206,8 +213,24 @@ def parse_pdf(
     max_pages: int | None = None,
     mode: str = "auto",
 ) -> ParsedDoc:
-    """Parse a PDF. mode="auto" routes clean-prose pages to the free text layer and
-    only spends a vision call where needed; mode="vision" forces vision on every page.
+    """Parse a PDF with per-page tiered routing.
+
+    Args:
+        data: The PDF file bytes.
+        filename: Carried into the result (becomes the doc_id downstream).
+        model: Vision-model override (defaults to ``parse_model``/``chat_model``).
+        scale: Render scale for vision-routed pages.
+        detail: Vision fidelity; ``"high"`` forces max tiling for dense text.
+        max_pages: Process at most this many pages (None = all).
+        mode: ``"auto"`` routes clean-prose pages to the free text layer and
+            only spends a vision call where needed; ``"vision"`` forces vision
+            on every page.
+
+    Returns:
+        The parsed document, with per-page routes and token accounting.
+
+    Raises:
+        ParseError: If the PDF can't be opened, is empty, or a vision call fails.
     """
     import pypdfium2 as pdfium
 

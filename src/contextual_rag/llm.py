@@ -1,38 +1,47 @@
-"""The endpoint layer — the ONLY module allowed to import the OpenAI SDK.
+"""The endpoint seam — the only module allowed to import the OpenAI SDK.
 
-It exposes three capabilities to the rest of the package:
+Exactly three capabilities are exposed to the rest of the package:
 
-    chat(messages, ...)        -> streamed or buffered chat completion
-    embed(texts)               -> embedding vectors
-    transcribe_image(b64, ...) -> vision call (used by the PDF parser)
+- :func:`chat` — streamed or buffered chat completion,
+- :func:`embed` — embedding vectors,
+- :func:`transcribe_image` — vision call (used by the PDF parser).
 
 Everything speaks the OpenAI API: the standard endpoint by default, or any
-OpenAI-compatible endpoint via OPENAI_BASE_URL. No other file should construct
-a client or hardcode a model.
+OpenAI-compatible endpoint via ``OPENAI_BASE_URL``. No other file constructs a
+client or hardcodes a model — which is why swapping providers is a config
+change, and why tests can fake the whole package by patching two functions here.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from typing import Iterator, Literal, Sequence
+from typing import Literal
 
 from openai import BadRequestError, OpenAI
 
 from contextual_rag.config import ConfigError, Settings, get_settings
 
-# --- Message / result types ------------------------------------------------
-
-# A chat message is the usual {"role": ..., "content": ...} dict.
+#: A chat message — the usual ``{"role": ..., "content": ...}`` mapping.
 Message = dict[str, str]
 
+
+# --------------------------------------------------------------------------- #
+# Result types
+# --------------------------------------------------------------------------- #
 
 @dataclass(frozen=True)
 class Usage:
     """Token accounting for one chat call.
 
-    `cached_tokens` is the portion of `prompt_tokens` served from the provider's
-    automatic prompt-prefix cache (0 if the endpoint doesn't report it). It's what
-    makes Contextual Retrieval cheap — the repeated document prefix is mostly cached.
+    Attributes:
+        prompt_tokens: Tokens in the request.
+        completion_tokens: Tokens generated.
+        total_tokens: Sum of the two.
+        cached_tokens: Portion of ``prompt_tokens`` served from the provider's
+            automatic prompt-prefix cache (0 if the endpoint doesn't report
+            it). This is what makes Contextual Retrieval cheap — the repeated
+            document prefix is mostly cached.
     """
 
     prompt_tokens: int
@@ -43,7 +52,13 @@ class Usage:
 
 @dataclass(frozen=True)
 class ChatResult:
-    """Return value of a non-streaming chat() call."""
+    """Return value of a non-streaming :func:`chat` call.
+
+    Attributes:
+        text: The generated message content ("" if the model returned none).
+        usage: Token accounting, or None if the endpoint didn't report it.
+        model: The model id the endpoint actually served.
+    """
 
     text: str
     usage: Usage | None
@@ -52,10 +67,10 @@ class ChatResult:
 
 @dataclass(frozen=True)
 class StreamEvent:
-    """One event from a streaming chat() call.
+    """One event from a streaming :func:`chat` call.
 
-    type="delta"  -> `text` holds the next token(s).
-    type="usage"  -> `usage` holds final token counts (arrives once, at the end).
+    ``type="delta"`` → ``text`` holds the next token(s).
+    ``type="usage"`` → ``usage`` holds final token counts (arrives once, last).
     """
 
     type: Literal["delta", "usage"]
@@ -63,7 +78,9 @@ class StreamEvent:
     usage: Usage | None = None
 
 
-# --- Client construction ----------------------------------------------------
+# --------------------------------------------------------------------------- #
+# Client construction
+# --------------------------------------------------------------------------- #
 
 _client: OpenAI | None = None
 _client_settings: Settings | None = None
@@ -71,9 +88,9 @@ _client_settings: Settings | None = None
 
 def _build_client(s: Settings) -> OpenAI:
     if s.base_url:
-        # OpenAI-compatible endpoint at a custom URL. Keyless gateways still need
-        # a non-empty api_key string (the SDK refuses an empty one), so we pass a
-        # placeholder the server ignores.
+        # OpenAI-compatible endpoint at a custom URL. Keyless gateways still
+        # need a non-empty api_key string (the SDK refuses an empty one), so we
+        # pass a placeholder the server ignores.
         return OpenAI(base_url=s.base_url, api_key=s.api_key or "not-needed")
     if not s.api_key:
         raise ConfigError(
@@ -85,7 +102,7 @@ def _build_client(s: Settings) -> OpenAI:
 
 
 def _get_client() -> OpenAI:
-    """One shared client per active Settings; rebuilt after configure()."""
+    """One shared client per active ``Settings``; rebuilt after ``configure()``."""
     global _client, _client_settings
     s = get_settings()
     if _client is None or _client_settings is not s:
@@ -107,7 +124,9 @@ def _to_usage(raw) -> Usage | None:
     )
 
 
-# --- Public API ------------------------------------------------------------
+# --------------------------------------------------------------------------- #
+# Public API
+# --------------------------------------------------------------------------- #
 
 def chat(
     messages: Sequence[Message],
@@ -117,14 +136,25 @@ def chat(
     temperature: float | None = None,
     max_tokens: int | None = None,
 ) -> ChatResult | Iterator[StreamEvent]:
-    """Run a chat completion.
+    """Run a chat completion against the configured endpoint.
 
-    stream=False -> returns a ChatResult (buffered text + usage).
-    stream=True  -> returns an iterator of StreamEvent (deltas, then one usage).
+    Args:
+        messages: The conversation, as ``{"role", "content"}`` dicts.
+        stream: False → return a buffered :class:`ChatResult`.
+            True → return an iterator of :class:`StreamEvent` (text deltas,
+            then exactly one usage event).
+        model: Override the configured chat model for this call.
+        temperature: Override the configured default temperature.
+        max_tokens: Cap the completion length (omitted from the request when
+            None — see :func:`_common_kwargs` for why that matters).
 
-    `model` overrides the configured chat model; the other kwargs override
-    generation defaults. Streaming requests opt into usage reporting so callers
-    can still show token counts after a live answer.
+    Returns:
+        A :class:`ChatResult`, or an iterator of :class:`StreamEvent` when
+        ``stream=True``.
+
+    Raises:
+        ConfigError: If no endpoint is configured at all.
+        openai.OpenAIError: On unrecoverable API errors.
     """
     s = get_settings()
     model = model or s.chat_model
@@ -136,10 +166,9 @@ def chat(
 
 
 def _common_kwargs(model, messages, temperature, max_tokens) -> dict:
-    """Shared request kwargs. Only include `max_tokens` when actually set —
-    newer models (gpt-5, o-series) reject the legacy `max_tokens` param, even as
-    null, so sending it unconditionally breaks them.
-    """
+    """Shared request kwargs. ``max_tokens`` is only included when actually set —
+    newer models (gpt-5, o-series) reject the legacy ``max_tokens`` param, even
+    as null, so sending it unconditionally would break them."""
     kwargs = {
         "model": model,
         "messages": list(messages),
@@ -153,11 +182,10 @@ def _common_kwargs(model, messages, temperature, max_tokens) -> dict:
 def _create(**kwargs):
     """Create a completion, retrying without params the model rejects.
 
-    Reasoning models (gpt-5, o1/o3/o4...) only allow the default temperature and
-    take `max_completion_tokens` instead of the legacy `max_tokens`, so on the
-    matching 400 we adapt and retry. Generic by design — no per-model table to
-    maintain across endpoints.
-    """
+    Reasoning models (gpt-5, o1/o3/o4...) only allow the default temperature
+    and take ``max_completion_tokens`` instead of the legacy ``max_tokens``, so
+    on the matching 400 we adapt and retry. Generic by design — no per-model
+    table to maintain across endpoints."""
     client = _get_client()
     for _ in range(3):
         try:
@@ -211,13 +239,21 @@ def transcribe_image(
     detail: str = "auto",
     max_tokens: int | None = None,
 ) -> ChatResult:
-    """Vision call: send one page image (base64 PNG) + a prompt, get text back.
+    """Vision call: send one page image plus a prompt, get text back.
 
-    Uses the same OpenAI-compatible client as chat(), with the standard image
-    content part. temperature=0 for faithful transcription (dropped automatically
-    if the model rejects it). `detail` is the vision fidelity ("low"|"high"|"auto"):
-    "high" forces max tiling for small/dense text. This is how PDF pages are
-    parsed (render → image → here).
+    Used by the PDF parser (render page → PNG → here). Runs at temperature 0
+    for faithful transcription (dropped automatically if the model rejects it).
+
+    Args:
+        image_b64: Base64-encoded PNG of the page.
+        prompt: Transcription instructions.
+        model: Override; defaults to ``parse_model``, then ``chat_model``.
+        detail: Vision fidelity, ``"low" | "high" | "auto"``. ``"high"`` forces
+            max tiling — needed for small or dense text.
+        max_tokens: Cap the completion length.
+
+    Returns:
+        A :class:`ChatResult` with the transcription in ``text``.
     """
     s = get_settings()
     model = model or s.parse_model or s.chat_model
@@ -245,17 +281,26 @@ def transcribe_image(
 
 
 def list_models() -> list[str]:
-    """List model ids available at the configured endpoint (any OpenAI-compatible
-    endpoint exposes /v1/models)."""
+    """List model ids available at the configured endpoint.
+
+    Works on any OpenAI-compatible endpoint (they all expose ``/v1/models``).
+    """
     resp = _get_client().models.list()
     return sorted(m.id for m in resp.data)
 
 
 def embed(texts: Sequence[str], *, model: str | None = None) -> list[list[float]]:
-    """Embed one or more texts, returning a vector per input (order preserved).
+    """Embed one or more texts, returning one vector per input, in order.
 
-    The embedding dimension is whatever the model returns — callers must read it
-    dynamically, never assume it, since it differs between models.
+    The embedding dimension is whatever the model returns — callers must read
+    it dynamically, never assume it, since it differs between models.
+
+    Args:
+        texts: The texts to embed. An empty sequence short-circuits to ``[]``.
+        model: Override the configured embedding model for this call.
+
+    Returns:
+        One embedding vector per input text, input order preserved.
     """
     if not texts:
         return []
@@ -263,6 +308,6 @@ def embed(texts: Sequence[str], *, model: str | None = None) -> list[list[float]
         model=model or get_settings().embed_model,
         input=list(texts),
     )
-    # API guarantees results are returned in input order, but sort defensively.
+    # The API guarantees input order, but sort defensively by index.
     ordered = sorted(resp.data, key=lambda d: d.index)
     return [d.embedding for d in ordered]

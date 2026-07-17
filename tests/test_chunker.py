@@ -123,6 +123,19 @@ def test_page_spanning_chunk():
     assert chunks[0].pages == [1, 2], f"spanning chunk should cite both pages, got {chunks[0].pages}"
 
 
+def test_unified_blob_parser_gets_no_page_provenance():
+    """Regression: a parser returning ONE Markdown blob for a multi-page doc
+    (Azure DI) must yield pages=[] — not stamp page 1 on every chunk."""
+    class UnifiedDoc:
+        filename = "di.pdf"
+        pages = 40
+        page_markdown = ["# Title\n\nBody from many pages, unified by the backend."]
+
+    chunks = chunk_parsed_doc(UnifiedDoc(), target_tokens=512, count_tokens=WC)
+    assert chunks and all(c.pages == [] for c in chunks), \
+        "unified-blob parse must not claim page provenance"
+
+
 def test_serialization():
     c = chunk_markdown("# T\n\nhello world", count_tokens=WC)[0]
     d = c.to_dict()

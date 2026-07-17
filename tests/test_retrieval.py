@@ -145,3 +145,75 @@ def test_facade_roundtrip(monkeypatch):
     assert hits and hits[0].doc_id == "doc.md"
     rag.reset()
     assert rag.count() == 0
+
+
+def test_collection_names_valid_and_collision_free():
+    """Regression: Chroma rejects names not starting/ending alphanumeric or
+    containing '..'; and distinct domain_ids must never merge into one
+    collection. Constructing the stores exercises real Chroma validation."""
+    root = tempfile.mkdtemp()
+    for weird in ("my corpus!", "corpus.", "x..y", "é.corpus."):
+        VectorStore(weird, path=root)  # must not raise
+    from contextual_rag.store import _collection_name
+    assert _collection_name("a b") != _collection_name("a_b"), \
+        "sanitization must not collide distinct domain ids"
+    assert _collection_name("default") == "crag_default", \
+        "clean ids must keep their historical collection name"
+
+
+def test_endpoint_rerank_survives_bad_remote_indices(monkeypatch):
+    """Regression: a hosted reranker returning out-of-range/junk indices must
+    be dropped defensively, never crash the query or mis-stamp scores."""
+    import contextual_rag.rerank as rerank_mod
+    from contextual_rag.types import ScoredChunk
+
+    def _sc(i):
+        return ScoredChunk(chunk_id=f"c{i}", text=f"t{i}", context="",
+                           doc_id="d", pages=[], section="")
+
+    chunks = [_sc(0), _sc(1), _sc(2)]
+    payload = {"results": [
+        {"index": 2, "relevance_score": 0.9},
+        {"index": 99, "relevance_score": 0.8},   # out of range → dropped
+        {"index": -1, "relevance_score": 0.7},   # negative → dropped
+        {"index": 0, "relevance_score": 0.1},
+    ]}
+
+    class FakeResp:
+        def read(self):
+            import json
+            return json.dumps(payload).encode()
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+
+    from contextual_rag.config import Settings
+    monkeypatch.setattr(rerank_mod, "get_settings",
+                        lambda: Settings(rerank_model="ce",
+                                         rerank_base_url="https://reranker.test"))
+    monkeypatch.setattr(rerank_mod.urllib.request, "urlopen",
+                        lambda req, timeout: FakeResp())
+    ranked = rerank_mod.rerank("q", chunks, mode="endpoint")
+    assert [c.chunk_id for c in ranked] == ["c2", "c0", "c1"]
+    assert "rerank" not in chunks[1].scores or chunks[1].scores["rerank"] != 0.7, \
+        "negative index must not stamp a score on the wrong chunk"
+
+
+def test_facade_ask(monkeypatch):
+    """Regression: rag.ask() must reach answer_from through the module, not the
+    re-exported `answer` function that shadows the submodule (a latent 0.1.0 bug)."""
+    from contextual_rag import ContextualRAG
+
+    class R:
+        text = "Caching makes it cheap [S1]."
+        usage = None
+        model = "fake"
+
+    monkeypatch.setattr(llm, "chat", lambda messages, **kw: R())
+    rag = ContextualRAG("facade-ask", path=tempfile.mkdtemp(), rerank="off")
+    rag.ingest_markdown(
+        "# Doc\n\nPrompt caching makes contextual retrieval cheap.", doc_id="doc.md")
+    ans = rag.ask("Why is contextual retrieval cheap?", k=2)
+    assert "[S1]" in ans.text
+    assert ans.sources and ans.sources[0].doc_id == "doc.md"

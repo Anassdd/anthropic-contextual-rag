@@ -1,8 +1,9 @@
-"""Token counting for the chunker — exact via tiktoken when available, else a heuristic.
+"""Token counting — exact via tiktoken when available, heuristic otherwise.
 
-Kept pluggable (chunk_* functions accept a `count_tokens` callable) so the chunker
-never hard-depends on tiktoken's downloadable vocab — a locked-down machine may not
-fetch it. This module is just the default counter.
+Kept pluggable (the ``chunk_*`` functions accept a ``count_tokens`` callable)
+so the chunker never hard-depends on tiktoken's downloadable vocabulary — a
+locked-down machine may not be able to fetch it. This module is just the
+default counter; install the ``tokens`` extra for exact counts.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ _tried = False
 
 
 def _get_encoder():
+    """Load the tiktoken encoder once; remember failure so we never retry."""
     global _encoder, _tried
     if _tried:
         return _encoder
@@ -26,9 +28,18 @@ def _get_encoder():
 
 
 def count_tokens(text: str) -> int:
-    """Token count for `text`. Exact if tiktoken loads; otherwise the classic
-    ~4-chars-per-token estimate (slightly conservative, which keeps chunks at/under
-    target rather than over)."""
+    """Count tokens in ``text``.
+
+    Exact if tiktoken loads; otherwise the classic ~4-chars-per-token estimate.
+    The estimate is slightly conservative on purpose — it keeps chunks at or
+    under their size target rather than over.
+
+    Args:
+        text: The text to measure. Empty or None-ish counts as 0.
+
+    Returns:
+        The token count (>= 1 for any non-empty text).
+    """
     if not text:
         return 0
     enc = _get_encoder()
