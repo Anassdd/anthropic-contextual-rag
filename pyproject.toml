@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "anthropic-contextual-rag"
+version = "0.1.0"
+description = "Anthropic-style Contextual Retrieval as a reusable RAG package: chunk → LLM-situate → embed + BM25 → RRF → rerank → grounded, source-cited answers. Works with any OpenAI-compatible endpoint."
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["rag", "retrieval", "contextual-retrieval", "bm25", "hybrid-search", "chroma", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "openai>=1.40",
+    "python-dotenv>=1.0",
+    "chromadb>=0.5",
+]
+
+[project.optional-dependencies]
+# PDF ingestion via the vision parser (render pages locally, transcribe with a vision LLM).
+pdf = ["pypdfium2>=4.30", "pillow>=10"]
+# PDF ingestion via Azure Document Intelligence (deterministic, in-tenant).
+docintel = ["azure-ai-documentintelligence>=1.0"]
+# Exact token counting for the chunker (falls back to a heuristic without it).
+tokens = ["tiktoken>=0.7"]
+dev = ["pytest>=8"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/contextual_rag"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

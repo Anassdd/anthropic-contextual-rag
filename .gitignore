@@ -1,0 +1,20 @@
+# Secrets — never commit keys
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.venv/
+.pytest_cache/
+
+# Local vector stores
+.contextual_rag/
+.chroma/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
