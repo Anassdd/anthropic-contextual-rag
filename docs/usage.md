@@ -1,8 +1,12 @@
 # Usage guide
 
 Everything you need to go from `pip install` to grounded, cited answers.
-For *why* the pipeline is built this way, read [how-it-works.md](how-it-works.md);
-for measured results, read [evaluation.md](evaluation.md).
+
+New to RAG? Read [how-it-works.md](how-it-works.md) first — it starts from
+zero. Before ingesting a large corpus, read [costs.md](costs.md) (what this
+costs vs. plain RAG, honestly) and [caching.md](caching.md) (the prompt-caching
+mechanics that make it affordable — including Azure-specific surprises).
+Measured results live in [evaluation.md](evaluation.md).
 
 ## Install
 

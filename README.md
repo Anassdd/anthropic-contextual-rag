@@ -93,8 +93,10 @@ the [usage guide](docs/usage.md).
 
 | | |
 |---|---|
-| [Usage guide](docs/usage.md) | Install, configuration, the 5-minute tour, recipes, cost model |
-| [How it works](docs/how-it-works.md) | The pipeline stage by stage, design decisions, extension seams |
+| [How it works](docs/how-it-works.md) | From zero — what RAG is, why it fails, and how this fixes it |
+| [Usage guide](docs/usage.md) | Install, configuration, the 5-minute tour, recipes |
+| [Costs](docs/costs.md) | What it costs vs. plain RAG, with worked math — and when *not* to use this |
+| [Caching](docs/caching.md) | Prompt caching in depth: OpenAI, Azure OpenAI, Anthropic; verify it works |
 | [Evaluation](docs/evaluation.md) | Methodology, measured results, what the benchmark changed in the code |
 | [Changelog](CHANGELOG.md) | Versions and notable changes |
 

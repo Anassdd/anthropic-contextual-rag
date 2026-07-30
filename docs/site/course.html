@@ -9,8 +9,9 @@
     --slate: #5E5D59;
     --faint: #8A8781;
     --accent: #C15F3C;
-    --accent-soft: #E8CDBF;
+    --accent-soft: #F2DCCE;
     --good: #4E7A5A;
+    --bad: #A34A3A;
     --line: #DDD9CC;
     --code-bg: #F0EEE6;
     --serif: "Charter", "Iowan Old Style", "Georgia", "Times New Roman", serif;
@@ -19,196 +20,139 @@
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #1F1D18;
-      --panel: #282520;
-      --panel-deep: #2F2C25;
-      --ink: #F0EEE6;
-      --slate: #B3AFA4;
-      --faint: #8A8781;
-      --accent: #D97757;
-      --accent-soft: #5A3B2C;
-      --good: #86B294;
-      --line: #3A362D;
-      --code-bg: #282520;
+      --bg: #1F1D18; --panel: #282520; --panel-deep: #2F2C25; --ink: #F0EEE6;
+      --slate: #B3AFA4; --faint: #8A8781; --accent: #D97757; --accent-soft: #4A3325;
+      --good: #86B294; --bad: #C98576; --line: #3A362D; --code-bg: #282520;
     }
   }
   :root[data-theme="light"] {
     --bg: #FAF9F5; --panel: #F0EEE6; --panel-deep: #E8E5DA; --ink: #191919;
-    --slate: #5E5D59; --faint: #8A8781; --accent: #C15F3C; --accent-soft: #E8CDBF;
-    --good: #4E7A5A; --line: #DDD9CC; --code-bg: #F0EEE6;
+    --slate: #5E5D59; --faint: #8A8781; --accent: #C15F3C; --accent-soft: #F2DCCE;
+    --good: #4E7A5A; --bad: #A34A3A; --line: #DDD9CC; --code-bg: #F0EEE6;
   }
   :root[data-theme="dark"] {
     --bg: #1F1D18; --panel: #282520; --panel-deep: #2F2C25; --ink: #F0EEE6;
-    --slate: #B3AFA4; --faint: #8A8781; --accent: #D97757; --accent-soft: #5A3B2C;
-    --good: #86B294; --line: #3A362D; --code-bg: #282520;
+    --slate: #B3AFA4; --faint: #8A8781; --accent: #D97757; --accent-soft: #4A3325;
+    --good: #86B294; --bad: #C98576; --line: #3A362D; --code-bg: #282520;
   }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; }
+  }
   body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--sans);
-    font-size: 1.0525rem;
-    line-height: 1.68;
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 1.0525rem; line-height: 1.7;
   }
 
-  /* ---- Sidebar ---- */
+  /* ---------- left rail ---------- */
   .rail {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: 264px;
-    padding: 2.2rem 1.6rem 2rem;
-    border-right: 1px solid var(--line);
-    background: var(--bg);
-    overflow-y: auto;
+    position: fixed; inset: 0 auto 0 0; width: 264px;
+    padding: 2.2rem 1.6rem 2rem; border-right: 1px solid var(--line);
+    background: var(--bg); overflow-y: auto;
   }
-  .rail .wordmark {
-    font-family: var(--serif);
-    font-size: 1.22rem;
-    line-height: 1.25;
-    margin: 0 0 .25rem;
-  }
+  .rail .wordmark { font-family: var(--serif); font-size: 1.22rem; line-height: 1.25; margin: 0 0 .25rem; }
   .rail .wordmark em { font-style: italic; color: var(--accent); }
   .rail .kicker {
-    font-size: .68rem;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--faint);
-    margin: 0 0 1.8rem;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--faint); margin: 0 0 1.8rem;
   }
   .rail nav { display: flex; flex-direction: column; gap: .12rem; }
   .rail a {
-    display: flex;
-    gap: .6rem;
-    align-items: baseline;
-    padding: .34rem .55rem;
-    border-radius: 4px;
-    color: var(--slate);
-    text-decoration: none;
-    font-size: .855rem;
-    line-height: 1.35;
+    display: flex; gap: .6rem; align-items: baseline;
+    padding: .3rem .55rem; border-radius: 4px; color: var(--slate);
+    text-decoration: none; font-size: .84rem; line-height: 1.35;
     border-left: 2px solid transparent;
   }
   .rail a .n {
-    font-family: var(--mono);
-    font-size: .68rem;
-    color: var(--faint);
-    min-width: 1.35em;
-    font-variant-numeric: tabular-nums;
+    font-family: var(--mono); font-size: .66rem; color: var(--faint);
+    min-width: 1.35em; font-variant-numeric: tabular-nums;
   }
   .rail a:hover { color: var(--ink); background: var(--panel); }
   .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .rail a.active { color: var(--accent); border-left-color: var(--accent); background: var(--panel); }
   .rail a.active .n { color: var(--accent); }
   .rail .rail-foot {
-    margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+    margin-top: 1.6rem; padding-top: 1.1rem; border-top: 1px solid var(--line);
     font-size: .78rem; color: var(--faint); line-height: 1.6;
   }
   .rail .rail-foot a { display: inline; padding: 0; border: 0; color: var(--accent); font-size: inherit; }
   .rail .rail-foot a:hover { background: none; text-decoration: underline; }
 
-  /* ---- Main column ---- */
   main { margin-left: 264px; padding: 0 3.2rem 6rem; }
-  .measure { max-width: 68ch; }
+  .measure { max-width: 70ch; }
 
-  header.hero { padding: 5.2rem 0 3rem; border-bottom: 1px solid var(--line); }
+  header.hero { padding: 5rem 0 3rem; border-bottom: 1px solid var(--line); }
   .eyebrow {
     font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
     color: var(--accent); margin: 0 0 1.1rem; font-weight: 600;
   }
   h1 {
-    font-family: var(--serif);
-    font-weight: 500;
-    font-size: clamp(2.1rem, 4.5vw, 3.15rem);
-    line-height: 1.12;
-    margin: 0 0 1.2rem;
-    text-wrap: balance;
-    letter-spacing: -0.01em;
+    font-family: var(--serif); font-weight: 500;
+    font-size: clamp(2.1rem, 4.5vw, 3.1rem); line-height: 1.12;
+    margin: 0 0 1.2rem; text-wrap: balance; letter-spacing: -0.01em;
   }
   h1 em { font-style: italic; color: var(--accent); }
-  .lede { font-size: 1.16rem; color: var(--slate); line-height: 1.6; margin: 0; }
+  .lede { font-size: 1.15rem; color: var(--slate); line-height: 1.62; margin: 0; }
 
-  section { padding-top: 3.6rem; }
-  section + section { margin-top: 1.2rem; }
+  section { padding-top: 3.4rem; }
   h2 {
-    font-family: var(--serif);
-    font-weight: 500;
-    font-size: 1.72rem;
-    line-height: 1.22;
-    margin: 0 0 .4rem;
-    text-wrap: balance;
-    letter-spacing: -0.008em;
+    font-family: var(--serif); font-weight: 500; font-size: 1.7rem;
+    line-height: 1.22; margin: 0 0 .4rem; text-wrap: balance; letter-spacing: -0.008em;
   }
   h2 .sn {
-    font-family: var(--mono);
-    font-size: .78rem;
-    color: var(--accent);
-    display: block;
-    margin-bottom: .55rem;
-    letter-spacing: .08em;
+    font-family: var(--mono); font-size: .76rem; color: var(--accent);
+    display: block; margin-bottom: .5rem; letter-spacing: .08em;
   }
-  h3 {
-    font-family: var(--serif);
-    font-weight: 500;
-    font-size: 1.22rem;
-    margin: 2.1rem 0 .3rem;
-  }
+  h3 { font-family: var(--serif); font-weight: 500; font-size: 1.2rem; margin: 2rem 0 .3rem; }
   p { margin: .85rem 0; }
   a { color: var(--accent); }
   a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   strong { font-weight: 600; }
 
-  blockquote.chunk {
-    margin: 1.4rem 0;
-    padding: 1rem 1.3rem;
-    background: var(--panel);
-    border-left: 3px solid var(--accent);
-    border-radius: 0 6px 6px 0;
-    font-family: var(--serif);
-    font-size: 1.08rem;
-    font-style: italic;
-    color: var(--ink);
-  }
-  blockquote.chunk .who {
-    display: block; margin-top: .55rem;
-    font-family: var(--sans); font-style: normal; font-size: .76rem;
-    letter-spacing: .1em; text-transform: uppercase; color: var(--faint);
-  }
-
-  .blurb-demo {
-    margin: 1.4rem 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
-  }
-  .blurb-demo .blurb {
-    padding: .85rem 1.3rem; background: var(--accent-soft);
-    font-family: var(--serif); font-style: italic; font-size: .98rem; line-height: 1.55;
-  }
-  .blurb-demo .blurb .tag, .blurb-demo .orig .tag {
-    display: block; font-family: var(--sans); font-style: normal; font-size: .68rem;
-    letter-spacing: .12em; text-transform: uppercase; margin-bottom: .35rem; color: var(--accent);
-    font-weight: 600;
-  }
-  .blurb-demo .orig { padding: .85rem 1.3rem; background: var(--panel); }
-  .blurb-demo .orig .tag { color: var(--faint); }
-
   pre {
-    background: var(--code-bg);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 1rem 1.2rem;
-    overflow-x: auto;
-    font-family: var(--mono);
-    font-size: .84rem;
-    line-height: 1.6;
-    margin: 1.3rem 0;
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 1rem 1.2rem; overflow-x: auto;
+    font-family: var(--mono); font-size: .83rem; line-height: 1.6; margin: 1.3rem 0;
   }
   code { font-family: var(--mono); font-size: .875em; background: var(--panel); padding: .1em .38em; border-radius: 4px; }
   pre code { background: none; padding: 0; font-size: inherit; }
   .c-cm { color: var(--faint); }
   .c-kw { color: var(--accent); }
   .c-str { color: var(--good); }
+
+  /* notebook-style cells */
+  .cell { margin: 1.4rem 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .cell .cell-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: .45rem 1.1rem; background: var(--panel-deep);
+    font-family: var(--mono); font-size: .7rem; color: var(--faint);
+    letter-spacing: .06em;
+  }
+  .cell pre { margin: 0; border: 0; border-radius: 0; }
+  .cell .out {
+    border-top: 1px solid var(--line);
+    padding: .8rem 1.2rem; background: var(--bg);
+    font-family: var(--mono); font-size: .8rem; line-height: 1.6;
+    white-space: pre-wrap; overflow-x: auto; color: var(--slate);
+  }
+  .cell .out .ok { color: var(--good); }
+  .cell .out .miss { color: var(--bad); }
+  .cell .out b { color: var(--ink); font-weight: 600; }
+
+  blockquote.chunk {
+    margin: 1.4rem 0; padding: 1rem 1.3rem;
+    background: var(--panel); border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    font-family: var(--serif); font-size: 1.06rem; font-style: italic;
+  }
+  blockquote.chunk .who {
+    display: block; margin-top: .55rem;
+    font-family: var(--sans); font-style: normal; font-size: .74rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--faint);
+  }
 
   table { border-collapse: collapse; width: 100%; margin: 1.4rem 0; font-size: .92rem; }
   th {
@@ -222,22 +166,8 @@
   .yes { color: var(--good); font-weight: 700; }
   .table-scroll { overflow-x: auto; }
 
-  /* Pipeline diagram */
-  .pipe { margin: 1.6rem 0; }
-  .pipe .lane-label {
-    font-size: .68rem; letter-spacing: .13em; text-transform: uppercase;
-    color: var(--faint); margin: 1.1rem 0 .5rem; font-weight: 600;
-  }
-  .pipe .lane { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
-  .pipe .node {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
-    padding: .42rem .8rem; font-family: var(--mono); font-size: .78rem; white-space: nowrap;
-  }
-  .pipe .node.hot { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
-  .pipe .arrow { color: var(--faint); font-size: .8rem; }
-
   .callout {
-    margin: 1.6rem 0; padding: 1.1rem 1.3rem;
+    margin: 1.6rem 0; padding: 1.05rem 1.3rem;
     background: var(--panel); border-radius: 8px; border: 1px solid var(--line);
     font-size: .95rem;
   }
@@ -247,13 +177,124 @@
   }
   .callout p { margin: .4rem 0; }
 
+  details {
+    margin: 1.2rem 0; border: 1px solid var(--line); border-radius: 8px;
+    padding: 0; background: var(--panel);
+  }
+  details summary {
+    cursor: pointer; padding: .7rem 1.2rem; font-size: .9rem; color: var(--slate);
+    list-style: none; display: flex; align-items: baseline; gap: .5rem;
+  }
+  details summary::before { content: "▸"; color: var(--accent); font-size: .8rem; }
+  details[open] summary::before { content: "▾"; }
+  details summary:hover { color: var(--ink); }
+  details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 8px; }
+  details .d-body { padding: 0 1.2rem .9rem; font-size: .92rem; color: var(--slate); }
+  details .d-body p { margin: .5rem 0; }
+  details .d-body code { background: var(--panel-deep); }
+
+  /* ---------- interactive widgets ---------- */
+  .widget {
+    margin: 1.6rem 0; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--bg); overflow: hidden;
+  }
+  .widget .w-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    padding: .7rem 1.2rem; border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  .widget .w-title {
+    font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--faint); font-weight: 700;
+  }
+  .widget .w-body { padding: 1.1rem 1.2rem; }
+
+  .seg { display: inline-flex; gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; flex-wrap: wrap; }
+  .seg button {
+    font: inherit; font-size: .8rem; padding: .35rem .85rem; border: 0;
+    background: var(--bg); color: var(--slate); cursor: pointer;
+  }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button:hover { color: var(--ink); background: var(--panel); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .seg button[aria-selected="true"], .seg button.on {
+    background: var(--accent); color: #FAF9F5; font-weight: 600;
+  }
+
+  /* chunk visualizer */
+  .docview {
+    font-family: var(--mono); font-size: .8rem; line-height: 1.65;
+    white-space: pre-wrap; color: var(--ink);
+    padding: .9rem 1.05rem; background: var(--code-bg);
+    border: 1px solid var(--line); border-radius: 8px;
+  }
+  .chunkbox { border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; margin: .6rem 0; background: var(--code-bg); transition: border-color .15s; }
+  .chunkbox:hover { border-color: var(--accent); }
+  .chunkbox .cb-meta {
+    display: flex; gap: .9rem; flex-wrap: wrap; padding: .4rem .9rem;
+    border-bottom: 1px dashed var(--line);
+    font-family: var(--mono); font-size: .68rem; color: var(--faint);
+  }
+  .chunkbox .cb-meta b { color: var(--accent); font-weight: 600; }
+  .chunkbox .cb-text {
+    padding: .55rem .9rem; font-family: var(--mono); font-size: .78rem;
+    line-height: 1.6; white-space: pre-wrap;
+  }
+  .blurbmark { background: var(--accent-soft); border-radius: 3px; padding: .05em .15em; }
+
+  /* cost calculator */
+  .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem 1.6rem; margin-bottom: 1.1rem; }
+  .calc-field label { display: block; font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 600; margin-bottom: .3rem; }
+  .calc-field .val { font-family: var(--mono); font-size: .85rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .calc-field input[type="range"] { width: 100%; accent-color: var(--accent); margin: .3rem 0 0; }
+  .calc-field input[type="number"], .calc-field select {
+    font: inherit; font-family: var(--mono); font-size: .85rem; width: 100%;
+    padding: .3rem .5rem; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg); color: var(--ink);
+  }
+  .calc-field input:focus-visible, .calc-field select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .costbars { display: flex; flex-direction: column; gap: .85rem; margin: 1.1rem 0 .4rem; }
+  .costrow .cr-label { display: flex; justify-content: space-between; align-items: baseline; font-size: .85rem; margin-bottom: .3rem; }
+  .costrow .cr-name { color: var(--ink); }
+  .costrow .cr-val { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .costrow .cr-track { height: 14px; background: var(--panel); border-radius: 4px; overflow: hidden; }
+  .costrow .cr-fill { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 2px; transition: width .25s; }
+  .costrow.quiet .cr-fill { background: var(--faint); }
+  .calc-note { font-size: .8rem; color: var(--faint); margin-top: .8rem; line-height: 1.55; }
+  .calc-warn { display: none; margin-top: .7rem; padding: .5rem .8rem; border-radius: 6px; background: var(--accent-soft); color: var(--ink); font-size: .84rem; }
+  .calc-warn.show { display: block; }
+  .calc-head { display: flex; gap: 1.6rem; flex-wrap: wrap; margin: .2rem 0 .9rem; }
+  .stat { min-width: 8rem; }
+  .stat .s-num { font-family: var(--mono); font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat .s-cap { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+
+  /* tabs (providers, index view) */
+  .tabs .tablist { display: flex; gap: .3rem; flex-wrap: wrap; padding: .6rem 1.2rem 0; }
+  .tabs .tablist button {
+    font: inherit; font-size: .84rem; padding: .4rem .9rem; cursor: pointer;
+    border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0;
+    background: var(--panel); color: var(--slate);
+  }
+  .tabs .tablist button[aria-selected="true"] { background: var(--bg); color: var(--accent); font-weight: 600; }
+  .tabs .tablist button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .tabs .tabpanel { border-top: 1px solid var(--line); padding: 1rem 1.2rem; }
+  .tabs .tabpanel[hidden] { display: none; }
+  .fact { display: grid; grid-template-columns: 9.5rem 1fr; gap: .25rem .9rem; font-size: .9rem; margin: .6rem 0; }
+  .fact dt { color: var(--faint); font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; padding-top: .1rem; }
+  .fact dd { margin: 0; }
+
+  /* query switcher */
+  .qs-result { margin-top: 1rem; }
+  .qs-row { display: grid; grid-template-columns: 7.2rem 1fr; gap: .8rem; padding: .65rem 0; border-top: 1px dashed var(--line); font-size: .9rem; align-items: baseline; }
+  .qs-who { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--faint); }
+  .qs-hit { font-family: var(--mono); font-size: .8rem; }
+  .qs-hit .ok { color: var(--good); font-weight: 700; }
+  .qs-hit .miss { color: var(--bad); font-weight: 700; }
+  .qs-ans { font-family: var(--serif); font-style: italic; font-size: .98rem; margin-top: .2rem; }
+
   .qa { display: grid; gap: 1rem; margin: 1.5rem 0; }
   .qa .card { border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.25rem; background: var(--panel); }
   .qa .card.win { border-color: var(--good); }
-  .qa .who {
-    font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;
-    font-weight: 700; color: var(--faint); margin-bottom: .4rem;
-  }
+  .qa .who { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--faint); margin-bottom: .4rem; }
   .qa .card.win .who { color: var(--good); }
   .qa p { margin: 0; font-family: var(--serif); font-size: 1rem; font-style: italic; }
 
@@ -269,28 +310,32 @@
     .rail a.active { border-color: var(--accent); }
     main { margin-left: 0; padding: 0 1.4rem 4rem; }
     header.hero { padding-top: 2.4rem; }
+    .qs-row { grid-template-columns: 1fr; gap: .2rem; }
+    .fact { grid-template-columns: 1fr; }
   }
 </style>
 
 <aside class="rail">
   <p class="wordmark">Contextual <em>Retrieval</em></p>
-  <p class="kicker">A short course</p>
+  <p class="kicker">A course, from zero</p>
   <nav id="toc">
-    <a href="#problem"><span class="n">01</span> Why chunks fail</a>
-    <a href="#retrieval"><span class="n">02</span> Retrieval, in one page</a>
-    <a href="#idea"><span class="n">03</span> The idea</a>
-    <a href="#indexed"><span class="n">04</span> Indexed vs. cited</a>
-    <a href="#caching"><span class="n">05</span> Paying for it: caching</a>
-    <a href="#excerpt"><span class="n">06</span> Documents too big to fit</a>
-    <a href="#hybrid"><span class="n">07</span> Hybrid search &amp; fusion</a>
-    <a href="#rerank"><span class="n">08</span> Reranking</a>
-    <a href="#grounded"><span class="n">09</span> Grounded answers</a>
-    <a href="#proof"><span class="n">10</span> The proof</a>
-    <a href="#limits"><span class="n">11</span> Limits &amp; when to use it</a>
+    <a href="#rag"><span class="n">01</span> What RAG actually is</a>
+    <a href="#chunking"><span class="n">02</span> Chunking</a>
+    <a href="#search"><span class="n">03</span> How a chunk gets found</a>
+    <a href="#break"><span class="n">04</span> Where it breaks down</a>
+    <a href="#fix"><span class="n">05</span> The fix</a>
+    <a href="#honesty"><span class="n">06</span> Indexed vs. cited</a>
+    <a href="#money"><span class="n">07</span> The money question</a>
+    <a href="#caching"><span class="n">08</span> Caching, in depth</a>
+    <a href="#hybrid"><span class="n">09</span> Hybrid search &amp; fusion</a>
+    <a href="#rerank"><span class="n">10</span> Reranking</a>
+    <a href="#grounded"><span class="n">11</span> Grounded answers</a>
+    <a href="#proof"><span class="n">12</span> The receipts</a>
+    <a href="#decide"><span class="n">13</span> Should you use this?</a>
   </nav>
   <div class="rail-foot">
-    Based on Anthropic's <a href="https://www.anthropic.com/news/contextual-retrieval">Contextual Retrieval</a> post
-    and <a href="https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide">cookbook</a>.<br>
+    Technique by Anthropic — <a href="https://www.anthropic.com/news/contextual-retrieval">blog</a> ·
+    <a href="https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide">cookbook</a>.<br>
     Part 2: <a href="architecture.html">the package, inside&nbsp;out</a>.
   </div>
 </aside>
@@ -298,101 +343,239 @@
 <main>
   <header class="hero">
     <div class="measure">
-      <p class="eyebrow">Course · Retrieval-augmented generation</p>
+      <p class="eyebrow">Course · No RAG experience assumed</p>
       <h1>Every chunk deserves to remember <em>where it came from</em></h1>
       <p class="lede">
-        Contextual Retrieval is a deceptively simple technique published by Anthropic:
-        before you index a chunk, have an LLM write one sentence saying where the chunk
-        sits in its document — then index the sentence with the chunk. This course walks
-        through why that works, what it costs, and the measured difference it makes,
-        using a real implementation you can run.
+        You can code, but you've never built a retrieval system — this course is
+        for you. We'll build the ideas one at a time, with real inputs and real
+        outputs at every step: what a chunk actually looks like, why search
+        misses it, the one-sentence fix Anthropic published, what it honestly
+        costs, and the caching trick that makes it affordable. By the end you
+        should be able to decide, on evidence, whether you even want this.
       </p>
     </div>
   </header>
 
-  <section id="problem" class="measure">
-    <h2><span class="sn">01</span>Why chunks fail</h2>
+  <section id="rag" class="measure">
+    <h2><span class="sn">01</span>What RAG actually is</h2>
     <p>
-      Every RAG pipeline begins with an act of violence: it takes a coherent document
-      and cuts it into chunks small enough to embed and retrieve. The cut is necessary —
-      you can't stuff whole filings into every prompt — but something real is lost.
-      Look at a typical chunk from a quarterly report:
-    </p>
-    <blockquote class="chunk">
-      “Revenue grew 14% year over year, reaching $595 million for the quarter,
-      driven by continued strength in subscription renewals.”
-      <span class="who">Chunk 7 of 10 · some document</span>
-    </blockquote>
-    <p>
-      <strong>Whose</strong> revenue? <strong>Which</strong> quarter? The document knew —
-      the title said <em>Borealis Industries, Q2 2025</em> — but the chunk doesn't.
-      The company name lives three pages away, in a heading that landed in a different chunk.
+      A language model doesn't know your documents. It knows its training data,
+      which does not include last quarter's report, your contracts, or your
+      internal wiki. RAG — retrieval-augmented generation — is the standard fix,
+      and the whole idea fits in three steps:
     </p>
     <p>
-      This isn't a corner case. It is the <em>normal condition</em> of financial filings,
-      contracts, medical records, and papers: documents state their identity once, at the
-      top, and then spend fifty pages saying “the Company”, “the quarter”, “the patient”.
-      Almost every chunk in the body is an orphan.
+      <strong>1.</strong> When a user asks a question, <em>find</em> the few
+      passages in your documents most likely to contain the answer.<br>
+      <strong>2.</strong> <em>Paste</em> those passages into the prompt.<br>
+      <strong>3.</strong> Ask the model to answer <em>using only those
+      passages</em>, citing them.
     </p>
     <p>
-      Now imagine a user asks: <em>“How much did Borealis Industries' revenue grow in
-      Q2 2025?”</em> The chunk above is the answer. But the systems doing the searching
-      only see the chunk <em>as written</em> — and as written, it matches “Borealis”
-      and “Q2 2025” not at all. If your corpus holds twelve near-identical quarterly
-      reports, there are twelve interchangeable revenue chunks, and the retriever is
-      reduced to guessing. Measured on exactly this corpus shape
-      (<a href="#proof">§10</a>), a standard pipeline finds the right chunk in its top-5
-      less than <strong>3% of the time</strong>. It doesn't degrade. It collapses.
+      The model never "learns" your documents. It reads a handful of relevant
+      excerpts at question time — an open-book exam, where retrieval decides
+      which pages are open.
+    </p>
+    <details>
+      <summary>Why not just paste all the documents into the prompt?</summary>
+      <div class="d-body">
+        <p>Three reasons. Documents outgrow context windows fast (one long
+        filing can be 500k tokens). You'd pay to resend your whole corpus with
+        every question. And models get measurably worse at using a fact buried
+        in a mountain of mostly-irrelevant text. If your entire corpus is under
+        ~100k tokens, though — genuinely, just put it in the prompt and skip
+        RAG. Machinery you don't need is machinery that breaks.</p>
+      </div>
+    </details>
+    <p>
+      Everything therefore hangs on step 1. If retrieval brings back the wrong
+      passages, the best model in the world politely answers from the wrong
+      material. <strong>Retrieval quality is the ceiling on answer
+      quality</strong> — and this course is about one high-leverage way to raise
+      that ceiling.
     </p>
   </section>
 
-  <section id="retrieval" class="measure">
-    <h2><span class="sn">02</span>Retrieval, in one page</h2>
+  <section id="chunking" class="measure">
+    <h2><span class="sn">02</span>Chunking: the necessary crime</h2>
     <p>
-      To see why the fix works, you need thirty seconds on how the two standard
-      retrievers actually think.
+      You can't retrieve "the relevant part of a document" without deciding what
+      a <em>part</em> is. So documents get cut into <strong>chunks</strong> —
+      passages of a few hundred tokens, small enough to index and paste into a
+      prompt. Don't take our word for what that looks like; toggle it:
     </p>
-    <h3>Dense retrieval — search by meaning</h3>
+
+    <div class="widget" id="w-chunks">
+      <div class="w-head">
+        <span class="w-title">Interactive · what chunking does</span>
+        <div class="seg" role="group" aria-label="View as">
+          <button class="on" data-view="doc">One document</button>
+          <button data-view="chunks">Four chunks</button>
+        </div>
+      </div>
+      <div class="w-body">
+        <div data-pane="doc">
+          <div class="docview"># Borealis Industries — Q2 2025 Quarterly Report
+
+## Business overview
+Borealis closed Q2 2025 in line with the plan communicated at the
+start of the fiscal year. This report covers consolidated results,
+segment performance, and the outlook for the coming period.
+
+## Revenue
+Total revenue grew 14% year over year, reaching $595 million for
+the quarter, driven by continued strength in subscription renewals.
+Net revenue retention remained above target.
+
+## Operating margin
+Operating margin came in at 22% for the quarter, reflecting the
+cost program initiated last year and a favorable services mix.</div>
+        </div>
+        <div data-pane="chunks" hidden>
+          <div class="chunkbox">
+            <div class="cb-meta"><span><b>chunk 0</b></span><span>section: (title)</span><span>doc: borealis-q2.md</span></div>
+            <div class="cb-text"># Borealis Industries — Q2 2025 Quarterly Report</div>
+          </div>
+          <div class="chunkbox">
+            <div class="cb-meta"><span><b>chunk 1</b></span><span>section: Business overview</span><span>doc: borealis-q2.md</span></div>
+            <div class="cb-text">## Business overview
+
+Borealis closed Q2 2025 in line with the plan communicated at the start of the fiscal year. This report covers consolidated results, segment performance, and the outlook for the coming period.</div>
+          </div>
+          <div class="chunkbox">
+            <div class="cb-meta"><span><b>chunk 2</b></span><span>section: Revenue</span><span>doc: borealis-q2.md</span></div>
+            <div class="cb-text">## Revenue
+
+Total revenue grew 14% year over year, reaching $595 million for the quarter, driven by continued strength in subscription renewals. Net revenue retention remained above target.</div>
+          </div>
+          <div class="chunkbox">
+            <div class="cb-meta"><span><b>chunk 3</b></span><span>section: Operating margin</span><span>doc: borealis-q2.md</span></div>
+            <div class="cb-text">## Operating margin
+
+Operating margin came in at 22% for the quarter, reflecting the cost program initiated last year and a favorable services mix.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <p>
-      An <strong>embedding model</strong> turns text into a vector — a point in a
-      high-dimensional space arranged so that texts with similar <em>meaning</em> land
-      near each other. Index every chunk's vector; at query time, embed the question and
-      take the nearest chunks by cosine similarity. Dense retrieval is superb at
-      paraphrase (“How fast did sales climb?” finds “revenue grew”) and even works
-      across languages. Its weakness: it's blurry on <em>exact</em> things —
-      identifiers, error codes, names. And critically, it can only embed
-      <strong>what's in the text</strong>. If the chunk never says “Borealis”,
-      no geometry will put it near Borealis questions.
+      Each chunk keeps <strong>provenance</strong> — which document, which
+      pages, which heading trail — because later, when the model cites a chunk,
+      that citation has to resolve to something a human can check.
+    </p>
+    <p>
+      A good chunker cuts along real structure: headings first, then paragraphs,
+      then sentences. And some things it must refuse to cut at all — a code
+      block, a formula, a table. Half a table row is worse than an oversized
+      chunk, always.
+    </p>
+    <details>
+      <summary>Isn't there some smarter, AI-powered way to chunk?</summary>
+      <div class="d-body">
+        <p>"Semantic chunking" (using embeddings to find topic boundaries)
+        exists, and this library deliberately doesn't use it: it's slower and
+        not consistently better. Chunking is a low-leverage cut. The retrieval
+        gains in this course come from what happens <em>after</em> the cut —
+        which is the whole point of the next three sections.</p>
+      </div>
+    </details>
+  </section>
+
+  <section id="search" class="measure">
+    <h2><span class="sn">03</span>How a chunk gets found</h2>
+    <p>
+      Two search mechanisms with opposite personalities. Serious systems run
+      both, and you need a feel for each to see where they both fail.
+    </p>
+    <h3>Embeddings — search by meaning</h3>
+    <p>
+      An <strong>embedding model</strong> turns text into a long list of numbers
+      (a vector), arranged so that texts with similar <em>meaning</em> get
+      nearby numbers. "Revenue grew 14%" and "sales climbed by double digits"
+      land close together; "the printer is jammed" lands far away. You embed
+      every chunk once at ingestion; at question time you embed the question and
+      grab the nearest chunks. This is <strong>dense retrieval</strong>, and its
+      superpower is paraphrase: the user never has to guess the document's exact
+      wording. Its weakness: it's blurry on exact strings — product codes,
+      error IDs, names.
     </p>
     <h3>BM25 — search by exact words</h3>
     <p>
-      <strong>BM25</strong> is the classic keyword scorer (the heart of every serious
-      search engine since the '90s). It rewards chunks that contain the query's rare
-      terms — the rarer the term corpus-wide, the bigger the reward, with diminishing
-      returns for repetition and a penalty for long chunks. It's exact where embeddings
-      are blurry: perfect for “error TS-1129” or an accented product name. Its weakness
-      is the mirror image: it's blind to synonyms — and, again, it can only match
-      <strong>words that are actually in the chunk</strong>.
+      <strong>BM25</strong> is the classic keyword scorer that has powered
+      search engines for decades. It rewards chunks containing the question's
+      <em>rare</em> words: if only three chunks in the corpus mention
+      "TS-1129", a query with "TS-1129" nails them instantly. Exact where
+      embeddings are blurry; blind to synonyms where embeddings shine.
+    </p>
+    <div class="table-scroll">
+    <table>
+      <tr><th></th><th>Dense (embeddings)</th><th>BM25 (keywords)</th></tr>
+      <tr><td>"sales climbed" finds "revenue grew"</td><td class="yes">✓</td><td>✗</td></tr>
+      <tr><td>"error TS-1129" finds that exact code</td><td>shaky</td><td class="yes">✓ dead on</td></tr>
+      <tr><td>Works across languages</td><td class="yes">often</td><td>✗</td></tr>
+      <tr><td>Blind spot they <em>share</em></td><td colspan="2"><strong>Neither can match information the chunk doesn't contain.</strong></td></tr>
+    </table>
+    </div>
+    <p>
+      That last row is the entire setup for this course. Both retrievers, for
+      all their differences, can only work with the text that's actually in the
+      chunk. Hold that thought and look at chunk 2 again.
+    </p>
+  </section>
+
+  <section id="break" class="measure">
+    <h2><span class="sn">04</span>Where it all breaks down</h2>
+    <p>Here is chunk 2, exactly as the index sees it:</p>
+    <blockquote class="chunk">
+      "Total revenue grew 14% year over year, reaching $595 million for the
+      quarter, driven by continued strength in subscription renewals."
+      <span class="who">chunk 2 of 4 · some document</span>
+    </blockquote>
+    <p>
+      Now the user asks: <em>"How much did Borealis Industries' revenue grow in
+      Q2 2025?"</em>
+    </p>
+    <p>
+      That chunk <em>is</em> the answer. But read it as a stranger: whose
+      revenue? Which quarter? The words "Borealis" and "Q2 2025" appear nowhere
+      in it — the document said them once, on the title line, which landed in
+      chunk 0. So the embedding of chunk 2 has no Borealis in it to be near the
+      question, and BM25 has no "Borealis" token to match.
+      <strong>Both retrievers are blind to the right answer, for the same
+      reason.</strong>
+    </p>
+    <p>
+      Now imagine the realistic version: your corpus holds <em>twelve</em>
+      companies' quarterly reports. It contains twelve interchangeable "revenue
+      grew X%" chunks, and retrieval degenerates into a coin toss among them.
+      This isn't a corner case — it's how real documents are written. They state
+      their identity once, then say "the Company", "the quarter", "the patient"
+      for fifty pages. Nearly every chunk in the body is an orphan.
+    </p>
+    <p>
+      Measured on exactly this corpus shape (<a href="#proof">§12</a>), standard
+      hybrid retrieval finds a correct chunk in its top-5
+      <strong>2.8% of the time</strong>. It doesn't degrade. It collapses.
     </p>
     <div class="callout">
-      <div class="co-title">The shared blind spot</div>
+      <div class="co-title">Try this on your own corpus</div>
       <p>
-        Dense and BM25 fail differently on almost everything — which is why hybrids of
-        the two work so well (<a href="#hybrid">§7</a>). But they share exactly one blind
-        spot: <strong>neither can retrieve on information the chunk doesn't contain.</strong>
-        An orphaned chunk is invisible to both. That shared blind spot is the entire
-        target of Contextual Retrieval.
+        Pull ten random chunks and read them cold. For each one, ask: "could a
+        stranger tell what document this came from and what it's about?" Mostly
+        no → you have this problem, and the rest of this course will move your
+        numbers a lot. Mostly yes → the fix below will help only at the margin
+        (we'll be honest about that in <a href="#decide">§13</a>).
       </p>
     </div>
   </section>
 
-  <section id="idea" class="measure">
-    <h2><span class="sn">03</span>The idea: give every chunk a memory</h2>
+  <section id="fix" class="measure">
+    <h2><span class="sn">05</span>The fix: a sticky note on every chunk</h2>
     <p>
-      The fix is almost embarrassingly direct. At ingestion time — once per chunk,
-      before anything is indexed — show an LLM the <em>whole document</em> and the
-      chunk, and ask it to write a one-to-two-sentence blurb situating the chunk
-      within the document:
+      Anthropic's published fix is almost embarrassingly direct. At ingestion —
+      once per chunk, before anything is indexed — show an LLM the
+      <em>whole document</em> and the chunk, and ask for one or two sentences
+      situating the chunk within it. This is the prompt, verbatim:
     </p>
     <pre><code>&lt;document&gt;
 {THE WHOLE DOCUMENT}
@@ -405,42 +588,53 @@ Please give a short succinct context to situate this chunk within
 the overall document for the purposes of improving search retrieval
 of the chunk. Answer only with the succinct context and nothing else.</code></pre>
     <p>
-      That is Anthropic's published prompt, verbatim. For our orphaned revenue chunk,
-      the model — which <em>has</em> read the title page — writes something like:
+      The model — which <em>has</em> read the title line — writes something
+      like: <em>"This chunk is from Borealis Industries' Q2 2025 quarterly
+      report, in the Revenue section covering year-over-year growth."</em>
+      That blurb is prepended to the chunk <strong>for indexing only</strong>.
+      See the difference from the index's point of view:
     </p>
-    <div class="blurb-demo">
-      <div class="blurb">
-        <span class="tag">Generated blurb — prepended for indexing</span>
-        This chunk is from Borealis Industries' Q2 2025 quarterly report, in the
-        Revenue section covering year-over-year growth.
+
+    <div class="widget tabs" id="w-index">
+      <div class="w-head"><span class="w-title">Interactive · what the index sees</span></div>
+      <div class="tablist" role="tablist" aria-label="Index view">
+        <button role="tab" aria-selected="true" data-tab="plain">Plain indexing</button>
+        <button role="tab" aria-selected="false" data-tab="ctx">Contextual indexing</button>
       </div>
-      <div class="orig">
-        <span class="tag">Original chunk — unchanged</span>
-        Revenue grew 14% year over year, reaching $595 million for the quarter,
-        driven by continued strength in subscription renewals.
+      <div class="tabpanel" role="tabpanel" data-panel="plain">
+        <div class="docview">Total revenue grew 14% year over year, reaching $595 million for the quarter, driven by continued strength in subscription renewals. Net revenue retention remained above target.</div>
+        <p style="font-size:.85rem; color: var(--faint); margin:.7rem 0 0;">
+          No company. No quarter. To a query naming "Borealis" and "Q2 2025",
+          this chunk is invisible — to embeddings <em>and</em> keywords.
+        </p>
+      </div>
+      <div class="tabpanel" role="tabpanel" data-panel="ctx" hidden>
+        <div class="docview"><span class="blurbmark">This chunk is from Borealis Industries' Q2 2025 quarterly report, in the Revenue section covering year-over-year growth.</span>
+
+Total revenue grew 14% year over year, reaching $595 million for the quarter, driven by continued strength in subscription renewals. Net revenue retention remained above target.</div>
+        <p style="font-size:.85rem; color: var(--faint); margin:.7rem 0 0;">
+          The highlighted blurb is what got added. Now the embedding lands near
+          Borealis-Q2 questions, and BM25 has "Borealis" as a literal token to
+          match. Everything below the blurb is untouched.
+        </p>
       </div>
     </div>
+
     <p>
-      The blurb restores exactly what the cut destroyed: the company, the period, the
-      section. Prepend it to the chunk and suddenly <em>both</em> retrievers can see it —
-      the embedding of <code>blurb + chunk</code> lands near Borealis-Q2 questions, and
-      BM25 finds “Borealis” as a literal token. One LLM call repaired the shared
-      blind spot from §2.
-    </p>
-    <p>
-      Notice what the technique is <em>not</em>. It's not a smarter chunker — the chunks
-      are unchanged. It's not a bigger context window — the answer model sees the same
-      chunks it always did. It's a <strong>metadata enrichment at indexing time</strong>,
-      done by the one component in the stack that has actually read the whole document.
+      Notice what this technique is <em>not</em>. Not a smarter chunker — the
+      chunks are unchanged. Not a bigger context window — the answer model sees
+      the same chunks it always did. It's a metadata enrichment at indexing
+      time, written by the one component in the stack that has actually read the
+      whole document. One LLM call repaired the shared blind spot from §3.
     </p>
   </section>
 
-  <section id="indexed" class="measure">
-    <h2><span class="sn">04</span>What gets indexed vs. what gets cited</h2>
+  <section id="honesty" class="measure">
+    <h2><span class="sn">06</span>Indexed vs. cited — the honesty rule</h2>
     <p>
-      The single most important design rule — the one that keeps the technique honest —
-      is that the blurb exists <strong>for finding, not for reading</strong>. It's
-      indexed, never cited. One decision, stated once, and every stage inherits it:
+      The single most important design rule, the one that keeps the technique
+      trustworthy: the blurb exists <strong>for finding, not for reading</strong>.
+      One decision, stated once, and every stage inherits it:
     </p>
     <div class="table-scroll">
     <table>
@@ -453,202 +647,363 @@ of the chunk. Answer only with the succinct context and nothing else.</code></pr
     </table>
     </div>
     <p>
-      Why so strict? Because the blurb is <em>generated text</em>. It's usually right,
-      but it is a model's paraphrase, not the source. Letting it leak into answers or
-      citations would mean quoting the model to the user while claiming to quote the
-      document. Keeping it index-only gives you the findability without ever polluting
-      provenance: every citation still resolves to real bytes of the real document.
+      Why so strict? Because the blurb is <em>generated text</em> — usually
+      right, but a model's paraphrase, not the source. Let it leak into answers
+      or citations and you're quoting the model to your users while claiming to
+      quote the document. Index-only gives you the findability without ever
+      polluting provenance: every citation still resolves to real bytes of the
+      real document.
     </p>
     <p>
-      The one non-obvious row is the <strong>reranker</strong> — it sees the blurb too,
-      and this was learned the hard way (<a href="#rerank">§8</a>).
+      The one non-obvious row is the <strong>reranker</strong> — it sees the
+      blurb too, and that was learned by measurement, the hard way
+      (<a href="#rerank">§10</a>).
+    </p>
+  </section>
+
+  <section id="money" class="measure">
+    <h2><span class="sn">07</span>The money question</h2>
+    <p>
+      Here's the objection you should be raising: <em>"one LLM call per chunk,
+      each one resending the entire document? Why not just do normal RAG?"</em>
+      Good. Let's answer it with numbers instead of adjectives — drag the
+      sliders and watch what happens.
+    </p>
+
+    <div class="widget" id="w-calc">
+      <div class="w-head"><span class="w-title">Interactive · ingestion cost calculator</span></div>
+      <div class="w-body">
+        <div class="calc-grid">
+          <div class="calc-field">
+            <label for="c-docs">Documents <span class="val" id="c-docs-v">100</span></label>
+            <input type="range" id="c-docs" min="10" max="2000" step="10" value="100">
+          </div>
+          <div class="calc-field">
+            <label for="c-pages">Pages per document <span class="val" id="c-pages-v">30</span></label>
+            <input type="range" id="c-pages" min="1" max="200" step="1" value="30">
+          </div>
+          <div class="calc-field">
+            <label for="c-price">Input price · $ / M tokens</label>
+            <input type="number" id="c-price" min="0.01" step="0.01" value="0.25">
+          </div>
+          <div class="calc-field">
+            <label for="c-disc">Cached-token discount</label>
+            <select id="c-disc">
+              <option value="0.9" selected>90% (current OpenAI tier)</option>
+              <option value="0.75">75% (gpt-4.1 / o-series era)</option>
+              <option value="0.5">50% (gpt-4o era / Azure std.)</option>
+              <option value="0">No caching available</option>
+            </select>
+          </div>
+        </div>
+        <div class="calc-head">
+          <div class="stat"><div class="s-num" id="c-tokens">1.5M</div><div class="s-cap">corpus tokens</div></div>
+          <div class="stat"><div class="s-num" id="c-chunks">3,000</div><div class="s-cap">chunks (~512 tok)</div></div>
+          <div class="stat"><div class="s-num" id="c-mult">12×</div><div class="s-cap">premium vs. plain</div></div>
+        </div>
+        <div class="costbars" id="c-bars">
+          <div class="costrow quiet">
+            <div class="cr-label"><span class="cr-name">Plain RAG (embeddings only)</span><span class="cr-val" id="c-plain">$0.20</span></div>
+            <div class="cr-track"><div class="cr-fill" id="c-plain-bar" style="width:2%"></div></div>
+          </div>
+          <div class="costrow quiet">
+            <div class="cr-label"><span class="cr-name">Contextual — no caching</span><span class="cr-val" id="c-nocache">$11.70</span></div>
+            <div class="cr-track"><div class="cr-fill" id="c-nocache-bar" style="width:100%"></div></div>
+          </div>
+          <div class="costrow">
+            <div class="cr-label"><span class="cr-name">Contextual — with caching</span><span class="cr-val" id="c-cached">$1.90</span></div>
+            <div class="cr-track"><div class="cr-fill" id="c-cached-bar" style="width:16%"></div></div>
+          </div>
+        </div>
+        <div class="calc-warn" id="c-warn">
+          Documents this short (&lt;1,024 tokens) are below the provider's
+          minimum cacheable prefix — caching won't engage. They're cheap to
+          resend anyway; the uncached number is your real cost.
+        </div>
+        <p class="calc-note">
+          Assumptions: ~500 tokens/page, ~512-token chunks, blurb call = whole
+          document + chunk + ~90 instruction tokens, embeddings at $0.13/M
+          (paid by both pipelines). Blurb output adds a few percent, omitted.
+          Ingestion cost only — it's <strong>one-time</strong>. Edit the price
+          to match your model's current sheet; the ratios are the point.
+        </p>
+      </div>
+    </div>
+
+    <p>
+      Three honest readings of that calculator. First, <strong>caching is what
+      makes the technique viable</strong> — it turns a ~60× premium over plain
+      RAG into a ~12× one, which is why the next section gives it real space.
+      Second, the <strong>absolute</strong> number for thousands of pages is a
+      few dollars, <em>once</em> — for most teams the decision is not really
+      about money. Third, if you set the discount to "no caching" with long
+      documents, the price gets genuinely ugly — know which world you're in
+      before a big ingestion.
+    </p>
+    <h3>And at query time? Nothing changes.</h3>
+    <p>
+      This surprises people, so plainly: <strong>a contextual query costs the
+      same as a plain one and takes the same time.</strong> Same single
+      embedding call, same local keyword scan, same fusion. The blurbs live in
+      the index; the answer model reads the <em>original</em> chunks either way,
+      so the answer prompt is byte-for-byte the same size. The entire premium is
+      one-time, at ingestion.
+    </p>
+    <p>
+      What that one-time premium buys, with measured numbers, is
+      <a href="#proof">§12</a> — and whether it's worth it <em>for you</em> is
+      <a href="#decide">§13</a>.
     </p>
   </section>
 
   <section id="caching" class="measure">
-    <h2><span class="sn">05</span>Paying for it: prompt caching</h2>
+    <h2><span class="sn">08</span>Caching, in depth — the whole trick</h2>
     <p>
-      The obvious objection: <em>one LLM call per chunk, each carrying the entire
-      document?</em> A 100-page document with 200 chunks means sending those 100 pages
-      two hundred times. Naïvely, that's ruinous.
+      Every LLM call re-processes your entire prompt from the first token before
+      generating anything. Picture a colleague who, for every question about a
+      300-page manual, insists on re-reading the manual from page one.
+      <strong>Prompt caching</strong> is the provider noticing "the first 15,000
+      tokens of this request are identical to one I handled 20 seconds ago — I
+      still have that work" and skipping the re-read, passing part of the saving
+      back as a discount on those tokens.
+    </p>
+    <p>Three rules fall out of "it's a <em>prefix</em> cache":</p>
+    <p>
+      <strong>The match starts at token zero.</strong> One changed byte early in
+      the prompt — a timestamp, a request ID — and nothing after it can hit.<br>
+      <strong>There's a minimum</strong> (typically 1,024 tokens) before caching
+      engages at all.<br>
+      <strong>Entries live minutes, not hours.</strong> Caching makes a
+      <em>burst</em> of related calls cheap; it is not storage.
     </p>
     <p>
-      The rescue is <strong>prompt-prefix caching</strong>, and it's why the prompt in
-      §3 puts the document <em>first</em>. Modern LLM providers cache the computation
-      for a request's opening tokens: if two requests begin with byte-identical text,
-      the second one gets that prefix served from cache at roughly a tenth of the price.
-      Since every chunk of a document shares the same <code>&lt;document&gt;…&lt;/document&gt;</code>
-      opening, the document is paid for in full exactly <em>once</em> — every subsequent
-      chunk pays cached rates for it and full price only for its own small tail.
+      Now look at why contextual retrieval is the perfect caching customer. For
+      one document with 30 chunks, we make 30 calls that all begin identically:
     </p>
-    <div class="pipe" aria-label="Cache diagram">
-      <div class="lane-label">Call 1 — writes the cache</div>
-      <div class="lane">
-        <span class="node hot">document (full price)</span>
-        <span class="arrow">+</span>
-        <span class="node">chunk 1 + instructions</span>
+    <pre><code>&lt;document&gt;
+...the entire document, byte-identical in all 30 calls...   <span class="c-cm">← cached after call 1</span>
+&lt;/document&gt;
+
+Here is the chunk we want to situate...                     <span class="c-cm">← only this changes</span></code></pre>
+    <p>
+      The document rides <em>first</em> — that ordering is Anthropic's published
+      design, and it's not cosmetic. It makes the expensive part of every call
+      (the document) the cacheable part. The document is billed in full exactly
+      once; the other 29 calls pay ~10% for it. That is the entire difference
+      between the $12 and the $2 in the calculator above.
+    </p>
+
+    <div class="widget tabs" id="w-providers">
+      <div class="w-head"><span class="w-title">Interactive · how each provider does it</span></div>
+      <div class="tablist" role="tablist" aria-label="Provider">
+        <button role="tab" aria-selected="true" data-tab="openai">OpenAI</button>
+        <button role="tab" aria-selected="false" data-tab="azure">Azure OpenAI</button>
+        <button role="tab" aria-selected="false" data-tab="anthropic">Anthropic</button>
       </div>
-      <div class="lane-label">Calls 2…N — read the cache</div>
-      <div class="lane">
-        <span class="node">document (~10% price, cached)</span>
-        <span class="arrow">+</span>
-        <span class="node">chunk k + instructions</span>
+      <div class="tabpanel" role="tabpanel" data-panel="openai">
+        <dl class="fact">
+          <dt>Activation</dt><dd>Automatic — no flag, no code change, no write surcharge.</dd>
+          <dt>Discount</dt><dd>By model family: ~90% off cached input on current (gpt-5-class) models, ~75% on the gpt-4.1/o-series era, ~50% on gpt-4o-era. Check the pricing page for yours.</dd>
+          <dt>Minimum</dt><dd>1,024-token prefix; hits extend in 128-token steps.</dd>
+          <dt>Lifetime</dt><dd>~5–10 minutes of inactivity (up to ~1 h off-peak); fresh use refreshes.</dd>
+          <dt>Verify</dt><dd><code>usage.prompt_tokens_details.cached_tokens</code> on every response — this library surfaces it in each ingestion report.</dd>
+          <dt>Go deeper</dt><dd><a href="https://platform.openai.com/docs/guides/prompt-caching">OpenAI prompt-caching guide</a></dd>
+        </dl>
+      </div>
+      <div class="tabpanel" role="tabpanel" data-panel="azure" hidden>
+        <dl class="fact">
+          <dt>Activation</dt><dd>Same automatic mechanism as OpenAI — <em>on supported deployments</em>: gpt-4o (2024-08-06+), gpt-4o-mini, o-series and later. A gateway pinned to legacy gpt-4 / gpt-35-turbo gets <strong>zero caching</strong>, silently.</dd>
+          <dt>Discount</dt><dd>Standard deployments: discounted cached rate (mirrors OpenAI). Provisioned (PTU): up to 100% — cached tokens can be free and not count against throughput. Confirm on current Azure pricing.</dd>
+          <dt>Watch out</dt><dd>The cache lives <em>per deployment</em>. A load balancer round-robining across regional deployments sends call 2 to a backend that never saw call 1 — route ingestion sticky, or accept uncached pricing.</dd>
+          <dt>Verify</dt><dd><code>cached_tokens</code> appears from api-version <code>2024-10-01-preview</code>; an older pinned version hides it (caching still works, you just can't see it).</dd>
+          <dt>Go deeper</dt><dd><a href="https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/prompt-caching">Azure OpenAI prompt caching</a></dd>
+        </dl>
+      </div>
+      <div class="tabpanel" role="tabpanel" data-panel="anthropic" hidden>
+        <dl class="fact">
+          <dt>Activation</dt><dd><strong>Explicit</strong>, not automatic: you mark the end of the cacheable prefix with <code>cache_control: {"type": "ephemeral"}</code> — in the contextual-retrieval recipe, on the document block. This is exactly what Anthropic's cookbook does.</dd>
+          <dt>Pricing</dt><dd>Asymmetric: cache <em>writes</em> cost 1.25× base input; cache <em>reads</em> cost 0.10× — 90% off, refreshed on each use. A 1-hour TTL is available at a higher write multiplier.</dd>
+          <dt>Minimum</dt><dd>1,024 tokens (2,048 on Haiku-class); up to 4 breakpoints per request.</dd>
+          <dt>With this library</dt><dd>The package speaks the OpenAI protocol, so Claude is reached via a translating gateway (e.g. LiteLLM maps OpenAI-shaped calls onto Anthropic caching) — or implement natively from the source materials.</dd>
+          <dt>Go deeper</dt><dd><a href="https://www.anthropic.com/news/contextual-retrieval">Contextual Retrieval post</a> · <a href="https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide">cookbook notebook</a> · <a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching">prompt-caching docs</a></dd>
+        </dl>
       </div>
     </div>
-    <p>
-      Document-first ordering isn't cosmetic; it <em>is</em> the economics. Measured on
-      the implementation this course accompanies: <strong>82% of prompt tokens served
-      from cache</strong> in steady state. Two operational details worth knowing:
-    </p>
-    <p>
-      <strong>Prime before you parallelize.</strong> The cache entry doesn't exist until
-      the first call writes it. Fan out all chunks at once and every worker pays full
-      price for the prefix simultaneously. The right shape: run the first chunk of each
-      document <em>alone</em>, then fan out.
-    </p>
-    <p>
-      <strong>Verify, don't assume.</strong> Providers return a <code>cached_tokens</code>
-      count per call. Surface it in your ingestion reports — a caching regression should
-      be a number you notice, not a bill you discover.
-    </p>
-  </section>
 
-  <section id="excerpt" class="measure">
-    <h2><span class="sn">06</span>When the document doesn't fit</h2>
+    <h3>Making it actually hit</h3>
     <p>
-      The published recipe assumes the whole document fits in the model's input window.
-      A 500k-token filing doesn't. And well before hard limits, blurb quality quietly
-      degrades as irrelevant bulk grows — the “context rot” problem. So oversized
-      documents need a fallback, and it should degrade <em>gracefully</em>, not
-      truncate blindly.
+      Structure matters more than configuration. Keep the cacheable content
+      first and byte-identical (no timestamps or IDs before it). Prime before
+      you parallelize: the cache entry doesn't exist until the first call writes
+      it, so this library runs the first chunk of each document <em>alone</em>,
+      then fans out a small worker pool. And verify rather than assume — every
+      ingestion report carries <code>cached_tokens</code>:
     </p>
+    <div class="cell">
+      <div class="cell-head"><span>python</span><span>is caching working?</span></div>
+      <pre><code>report = rag.ingest_markdown(text, doc_id=<span class="c-str">"report.md"</span>)
+print(report[<span class="c-str">"context_tokens"</span>], report[<span class="c-str">"cached_tokens"</span>])</code></pre>
+      <div class="out">61204 48130        <b>← healthy: ~79% of prompt tokens served from cache</b>
+<span class="miss">61204 0</span>            ← paying full price. Doc under 1,024 tokens? Behind a
+                     load balancer? Legacy Azure deployment? Parallel burst
+                     on a short doc? (each has a fix — see docs/caching.md)</div>
+    </div>
     <p>
-      The implementation's answer is <strong>excerpt mode</strong>. Instead of the whole
-      document, each chunk's prompt carries a purpose-built excerpt:
-    </p>
-    <pre><code>excerpt = document HEAD   <span class="c-cm"># ~6k tokens: title, TOC, intro — the document's identity</span>
-        + "[…]"
-        + REGION around the chunk   <span class="c-cm"># ± ~4k-token margins of local context</span></code></pre>
-    <p>
-      The head keeps what §1 showed matters most — the document's <em>identity</em>
-      (who, what period, what kind of document) — while the region supplies local
-      context. And to keep §5's economics alive, consecutive chunks are batched so that
-      each batch shares one byte-identical excerpt: prefix caching keeps working
-      <em>per batch</em> exactly as it worked per document. The prompt honestly says
-      <code>&lt;document_excerpt&gt;</code> rather than pretending the model saw everything.
+      Measured on this implementation: <strong>82% of prompt tokens cached</strong>
+      in steady state on multi-page documents. One honest wrinkle: providers
+      need a few seconds for a fresh entry to become readable, so on very
+      <em>short</em> documents a parallel burst can finish before the cache
+      settles. The knob is <code>CONTEXT_CONCURRENCY=1</code> for short-doc
+      corpora; multi-page documents don't care.
     </p>
   </section>
 
   <section id="hybrid" class="measure">
-    <h2><span class="sn">07</span>Hybrid search &amp; rank fusion</h2>
+    <h2><span class="sn">09</span>Hybrid search &amp; rank fusion</h2>
     <p>
-      With contextual text indexed on both sides, run <em>both</em> retrievers on every
-      query — dense for meaning, BM25 for exact terms — and merge. But merging raises a
-      trap: a cosine similarity of 0.83 and a BM25 score of 7.1 live on incomparable
-      scales. Adding or averaging them is numerology.
+      With contextual text on both indexes, run <em>both</em> retrievers on
+      every query — dense for meaning, BM25 for exact terms — and merge. But
+      merging hides a trap: a cosine similarity of 0.83 and a BM25 score of 7.1
+      live on incomparable scales. Adding or averaging them is numerology.
     </p>
     <p>
       The clean merge ignores scores entirely and uses <strong>ranks</strong> —
-      Reciprocal Rank Fusion. Each chunk earns
-      <code>Σ 1 / (60 + rank)</code> across every list it appears in:
+      Reciprocal Rank Fusion. Each chunk earns <code>1 / (60 + rank)</code> from
+      every list it appears in:
     </p>
     <pre><code><span class="c-cm"># chunk ranked 1st by dense, 3rd by BM25:</span>
-score = 1/(60+1) + 1/(60+3) = 0.0323   <span class="c-cm"># liked by both → rises</span>
+1/(60+1) + 1/(60+3) = 0.0323   <span class="c-cm"># liked by both → rises</span>
 <span class="c-cm"># chunk ranked 1st by dense only:</span>
-score = 1/(60+1)            = 0.0164   <span class="c-cm"># loved by one → beaten</span></code></pre>
+1/(60+1)            = 0.0164   <span class="c-cm"># loved by one → beaten</span></code></pre>
     <p>
-      A chunk both retrievers liked outranks a chunk either loved alone — which is the
-      behavior you actually want, since the two fail so differently. The constant 60
-      just softens the top ranks' dominance; nobody tunes it, everybody uses it.
+      A chunk both retrievers liked outranks a chunk either loved alone — which
+      is what you want, given how differently the two fail.
     </p>
+    <details>
+      <summary>Why 60? Who picked that?</summary>
+      <div class="d-body">
+        <p>It's the standard constant from the original RRF paper (Cormack et
+        al., 2009). It softens how much the very top ranks dominate, so
+        agreement deeper in the lists still counts. Nobody tunes it; everybody
+        uses it. If you're ever tempted to tune it, you'll get more from
+        improving the blurbs.</p>
+      </div>
+    </details>
     <p>
-      One deflationary note from measurement: hybrid is a <em>refinement</em>, not the
-      rescue. On the benchmark corpus, plain-chunk hybrid still scores ~0% — BM25
-      matches the company name only in title chunks, which contain the name but not the
-      metric, and fusion faithfully inherits the confusion. Garbage ranked two ways is
-      still garbage. The blurb is what makes hybrid worth having.
+      A deflationary note from measurement: hybrid is a <em>refinement</em>, not
+      the rescue. On the benchmark corpus, plain-chunk hybrid still scores ~0% —
+      BM25 matches the company name only in title chunks, which contain the name
+      but not the metric, and fusion faithfully inherits the confusion. Garbage
+      ranked two ways is still garbage. The blurb is what makes hybrid worth
+      having.
     </p>
   </section>
 
   <section id="rerank" class="measure">
-    <h2><span class="sn">08</span>Reranking: similarity is not relevance</h2>
+    <h2><span class="sn">10</span>Reranking: similarity is not relevance</h2>
     <p>
-      Retrieval scores <em>how close</em> a chunk is to the query; it can't tell whether
-      the chunk actually <em>answers</em> it. After fusion, the top candidates for a
-      Borealis-Q2-revenue question typically include Borealis Q1's revenue section and
-      Borealis Q2's margin section — all near, only one right. A
-      <strong>reranker</strong> fixes this: it reads the query and the candidates
-      <em>together</em> and reorders by answer-likelihood. One cheap listwise LLM call
-      over the top ~30 fused candidates is enough; hosted cross-encoders are the
-      higher-throughput alternative.
+      Retrieval scores how <em>close</em> a chunk is to the query; it can't tell
+      whether the chunk actually <em>answers</em> it. After fusion, the top
+      candidates for a Borealis-Q2-revenue question typically include Borealis
+      Q1's revenue section and Borealis Q2's margin section — all near, only one
+      right. A <strong>reranker</strong> reads the query and candidates
+      <em>together</em> and reorders by answer-likelihood. One cheap listwise
+      LLM call over the top ~30 fused candidates is enough.
     </p>
     <div class="callout">
       <div class="co-title">Measured lesson — rerank the contextual text</div>
       <p>
-        The reranker must be shown <strong>blurb + chunk</strong>, not the bare chunk.
-        In an early version of the implementation it saw bare chunks — and it made
-        results <em>worse</em> (Pass@5 fell 94% → 81%): out-of-context chunks are as
-        indistinguishable to a reranker as they were to the retrievers, so it
-        confidently reshuffled twelve identical-looking revenue chunks. Shown the
-        contextual text, the same reranker became the best stage in the pipeline.
-        The lesson generalizes: <em>every stage that judges a chunk needs the chunk's
-        context to judge it.</em>
+        The reranker must see <strong>blurb + chunk</strong>, not the bare
+        chunk. An early version of this library showed it bare chunks, and it
+        made results <em>worse</em> — Pass@5 fell from 94% to 81% — because
+        out-of-context chunks are as indistinguishable to a reranker as they
+        were to the retrievers, so it confidently reshuffled twelve
+        identical-looking revenue chunks. Shown the contextual text, the same
+        reranker became the best stage in the pipeline. The lesson generalizes:
+        <em>every stage that judges a chunk needs the chunk's context to judge
+        it.</em>
       </p>
     </div>
     <p>
       Engineering note: LLM rerankers are flaky — they garble indices and forget
-      candidates. Treat their output defensively: drop invalid indices, append
-      forgotten candidates in their original order. A flaky reranker may reorder your
-      results; it must never be able to <em>lose</em> one.
+      candidates. Treat their output defensively (drop invalid indices, append
+      forgotten candidates in original order): a flaky reranker may reorder your
+      results, but it must never be able to <em>lose</em> one.
     </p>
   </section>
 
   <section id="grounded" class="measure">
-    <h2><span class="sn">09</span>Grounded answers</h2>
+    <h2><span class="sn">11</span>Grounded answers</h2>
     <p>
-      The last stage hands the top chunks — original text only, per §4 — to the answer
-      model as numbered sources, under a contract: <em>use only these sources; cite
-      inline as [S1], [S2]; if the sources don't contain the answer, say so plainly.</em>
-      Every <code>[S#]</code> resolves to a document, page, and section, so every claim
-      is checkable.
+      The last stage hands the top chunks — original text only, per §6 — to the
+      answer model as numbered sources, under a contract: <em>use only these
+      sources; cite inline as [S1], [S2]; if they don't contain the answer, say
+      so plainly.</em> Every <code>[S#]</code> resolves to a document, page, and
+      section, so every claim is checkable.
     </p>
     <p>
-      The contract matters most when retrieval <em>fails</em>. Watch both pipelines
-      answer “How much did Borealis Industries' revenue grow in Q2 2025?”:
+      The contract matters most when retrieval <em>fails</em>. Same question to
+      both pipelines, from a real benchmark run:
     </p>
     <div class="qa">
       <div class="card">
         <div class="who">Plain pipeline — retrieval failed</div>
-        <p>“The provided sources do not include Borealis Industries' revenue figures
-        for Q2 2025, so I can't determine how much revenue grew from them alone.
-        [S1] [S3]”</p>
+        <p>"The provided sources do not include Borealis Industries' revenue
+        figures for Q2 2025, so I can't determine how much revenue grew from
+        them alone. [S1] [S3]"</p>
       </div>
       <div class="card win">
         <div class="who">Contextual pipeline — retrieval succeeded</div>
-        <p>“Borealis Industries' total revenue grew <strong>14% year over year</strong>
-        in Q2 2025, reaching <strong>$595 million</strong> for the quarter [S2].”</p>
+        <p>"Borealis Industries' total revenue grew <strong>14% year over
+        year</strong> in Q2 2025, reaching <strong>$595 million</strong> for the
+        quarter [S2]."</p>
       </div>
     </div>
     <p>
-      The plain pipeline retrieved the wrong chunks — and <strong>refused rather than
-      hallucinated</strong>. That's the grounding contract holding under failure. The
-      contextual pipeline retrieved the right chunk and answered with the exact figure
-      and a citation that resolves to the right section. Retrieval quality and answer
-      honesty are separate systems; you want both.
+      Look at the failure carefully: the plain pipeline retrieved the wrong
+      chunks and <strong>refused rather than hallucinated</strong>. That's the
+      grounding contract holding under failure. Retrieval quality and answer
+      honesty are separate systems — you want both, and this course has only
+      been about the first.
     </p>
   </section>
 
   <section id="proof" class="measure">
-    <h2><span class="sn">10</span>The proof</h2>
+    <h2><span class="sn">12</span>The receipts</h2>
     <p>
-      Does it work? Here is an A/B measurement designed to isolate exactly one
-      variable. Corpus: 12 synthetic quarterly reports (3 companies × 4 quarters),
-      structurally identical, differing only in their numbers — and, like real filings,
-      never repeating the company name inside section bodies. 36 queries of the form
-      “How much did {company}'s {metric} change in {quarter}?”, gold chunks computed
-      by construction. Both conditions index the <em>identical</em> chunks with the
-      identical models; the only difference is whether the blurb was prepended.
-      <strong>Pass@k</strong>: did any gold chunk make the top k?
+      Two kinds of evidence, honestly labeled. First, an A/B you can run
+      yourself <em>in ten seconds with no API key</em>: this library ships
+      <code>examples/offline_demo.py</code>, which fakes the LLM endpoint,
+      indexes two project reports both ways, and queries them head-to-head.
+      These are its real outputs — pick a question:
+    </p>
+
+    <div class="widget" id="w-queries">
+      <div class="w-head">
+        <span class="w-title">Interactive · plain vs. contextual, real demo output</span>
+      </div>
+      <div class="w-body">
+        <div class="seg" role="group" aria-label="Pick a query" id="qs-buttons">
+          <button class="on" data-q="0">Nightingale budget?</button>
+          <button data-q="1">Icarus budget?</button>
+          <button data-q="2">Icarus schedule?</button>
+        </div>
+        <div class="qs-result" id="qs-out"></div>
+        <p style="font-size:.8rem; color: var(--faint); margin:.9rem 0 0;">
+          The corpus: two status reports whose sections never name their
+          project — "Spending is 12 percent under plan" with no clue
+          <em>whose</em> spending. Run it yourself:
+          <code>python examples/offline_demo.py</code>.
+        </p>
+      </div>
+    </div>
+
+    <p>
+      Second, the measured benchmark — a real API run (<code>gpt-5.4-mini</code>
+      + <code>text-embedding-3-large</code>) over 12 synthetic quarterly
+      reports built to maximize chunk ambiguity, 36 queries, gold labels exact
+      by construction. Both stores hold <em>identical chunks</em>; the only
+      difference is the blurb:
     </p>
     <div class="table-scroll">
     <table>
@@ -661,81 +1016,227 @@ score = 1/(60+1)            = 0.0164   <span class="c-cm"># loved by one → bea
     </table>
     </div>
     <p>
-      Read it bottom-up. Retrieval failures at k=5 drop from <strong>97.2% to
-      2.8%</strong> — a 97% reduction. The blurb does the heavy lifting (2.8% → 91.7%
-      Pass@5 on dense alone); hybrid earns its keep only <em>after</em> the blurb gives
-      BM25 real terms to match (Pass@1 55.6% → 66.7%); the reranker delivers the
-      decisive precision lift (Pass@1 66.7% → 91.7%).
+      Read it bottom-up: the blurb does the heavy lifting (2.8% → 91.7% Pass@5
+      on dense alone), hybrid earns its keep only <em>after</em> the blurb gives
+      BM25 something real to match, and the reranker delivers the final
+      precision jump. Retrieval failures at k=5 drop from 97.2% to 2.8%.
     </p>
     <p>
-      Calibrate against Anthropic's own evaluation on a natural corpus (737 code
-      chunks, 248 queries): Pass@10 rose 87% → 92% with contextual embeddings, ~93%
-      adding BM25, ~95% adding a reranker — a <strong>49% failure reduction (67% with
-      reranking)</strong>. The synthetic numbers above are starker because the corpus
-      is <em>built</em> to maximize chunk ambiguity; real corpora sit in between,
-      closer to Anthropic's figures the more self-contained their chunks already are.
+      For calibration against a <em>natural</em> corpus: Anthropic's own
+      evaluation (737 real code chunks, 248 queries) measured retrieval failures
+      dropping <strong>35%</strong> with contextual embeddings, <strong>49%</strong>
+      adding contextual BM25, <strong>67%</strong> adding a reranker
+      (<a href="https://www.anthropic.com/news/contextual-retrieval">source</a>).
+      Our numbers are starker because our corpus is <em>built</em> to exhibit
+      the failure mode; real corpora land in between, closer to Anthropic's the
+      more self-contained their chunks already are.
     </p>
   </section>
 
-  <section id="limits" class="measure">
-    <h2><span class="sn">11</span>Limits, and when to reach for it</h2>
+  <section id="decide" class="measure">
+    <h2><span class="sn">13</span>Should you even use this?</h2>
     <p>
-      A course that ends in a sales pitch has taught you nothing. The honest boundary
-      conditions:
+      A course that ends in a sales pitch has taught you nothing, so here is the
+      decision, both directions.
+    </p>
+    <h3>Reach for contextual retrieval when…</h3>
+    <p>
+      Your documents are long and state their identity once — filings,
+      contracts, reports, manuals, papers — and your users ask questions that
+      <em>name</em> entities the chunks omit. That's a large fraction of what
+      enterprises actually store, and on it this one-sentence-per-chunk
+      technique is among the highest-leverage changes you can make to a RAG
+      system: a few dollars of one-time ingestion for the numbers in §12, at
+      zero per-query cost.
+    </p>
+    <h3>Stay with plain RAG (or none) when…</h3>
+    <p>
+      <strong>Your chunks are already self-contained</strong> — FAQ entries,
+      product cards, short notes. The blurb would restate the chunk; save your
+      money (the ten-chunk test in §4 settles this in a minute).
+      <strong>Your corpus fits in one prompt</strong> — under ~100k tokens,
+      skip retrieval entirely. <strong>Your corpus churns hourly</strong> — the
+      "one-time" premium isn't one-time anymore. <strong>You can't get
+      caching</strong> and your documents are very long — set the calculator in
+      §7 to "no caching" and look at the number before deciding.
     </p>
     <p>
-      <strong>It targets one failure mode.</strong> Contextual Retrieval repairs
-      chunks that lost their document context. If your chunks are already
-      self-contained — FAQ entries, product descriptions, short standalone notes —
-      the blurbs add cost and near-zero lift. Diagnose first: pull ten random chunks
-      and ask, “could a stranger tell what this is about?” If yes, you don't need this.
-    </p>
-    <p>
-      <strong>It costs real money once.</strong> One LLM call per chunk at ingestion.
-      With caching (§5) it's roughly a tenth of the naïve cost, and it's a one-time
-      capital expense per document — but for a corpus you re-ingest hourly, do that math.
-    </p>
-    <p>
-      <strong>It doesn't fix bad chunking, parsing, or answering.</strong> A blurb
-      can't rescue a chunk that tore a table in half, a PDF whose figures were
-      silently dropped, or an answer model with no grounding contract. It's one stage
-      of a pipeline; the measured 97.2% needed all of them.
-    </p>
-    <p>
-      When the shoe fits, though, it fits remarkably well: long documents that state
-      their identity once and assume it thereafter — filings, contracts, reports,
-      manuals, papers — with questions that name entities the chunks omit. That's a
-      large fraction of the documents enterprises actually care about, and on them
-      this one-sentence-per-chunk technique is among the highest-leverage changes you
-      can make to a RAG system.
+      And if you're unsure: start plain, measure, upgrade on evidence. The
+      library makes that cheap — the benchmark script builds both pipelines
+      side by side, and the offline demo shows the difference without spending
+      a cent. Deciding <em>not</em> to use the technique, on evidence, is a
+      perfectly good outcome of this course.
     </p>
     <footer class="end measure">
       <p>
-        Continue with <a href="architecture.html">Part 2 — the package, inside out</a>:
-        the architecture of a production-shaped implementation, how to use it, and how
-        to tune it. Or go to the sources: Anthropic's
-        <a href="https://www.anthropic.com/news/contextual-retrieval">blog post</a> and
-        <a href="https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide">cookbook</a>.
+        Continue with <a href="architecture.html">Part 2 — the package, inside
+        out</a>: how the implementation is built, how to use it, and how to tune
+        it. Or go to the sources: Anthropic's
+        <a href="https://www.anthropic.com/news/contextual-retrieval">Contextual Retrieval post</a>
+        and <a href="https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide">cookbook</a>.
       </p>
     </footer>
   </section>
 </main>
 
 <script>
+(function () {
+  "use strict";
+
+  /* ---------- scrollspy ---------- */
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+  var current = null;
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        if (current) current.classList.remove("active");
+        current = byId[e.target.id];
+        if (current) current.classList.add("active");
+      }
+    });
+  }, { rootMargin: "-10% 0px -70% 0px" });
+  document.querySelectorAll("main section[id]").forEach(function (s) { observer.observe(s); });
+
+  /* ---------- chunk visualizer toggle ---------- */
   (function () {
-    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
-    var byId = {};
-    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
-    var current = null;
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) {
-          if (current) current.classList.remove('active');
-          current = byId[e.target.id];
-          if (current) current.classList.add('active');
-        }
+    var w = document.getElementById("w-chunks");
+    var buttons = w.querySelectorAll(".seg button");
+    buttons.forEach(function (b) {
+      b.addEventListener("click", function () {
+        buttons.forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        w.querySelectorAll("[data-pane]").forEach(function (p) {
+          p.hidden = p.getAttribute("data-pane") !== b.getAttribute("data-view");
+        });
       });
-    }, { rootMargin: '-10% 0px -70% 0px' });
-    document.querySelectorAll('main section[id]').forEach(function (s) { observer.observe(s); });
+    });
   })();
+
+  /* ---------- generic tabs (index view, providers) ---------- */
+  document.querySelectorAll(".widget.tabs").forEach(function (w) {
+    var tabs = w.querySelectorAll("[role=tab]");
+    tabs.forEach(function (t) {
+      t.addEventListener("click", function () {
+        tabs.forEach(function (x) { x.setAttribute("aria-selected", "false"); });
+        t.setAttribute("aria-selected", "true");
+        w.querySelectorAll("[data-panel]").forEach(function (p) {
+          p.hidden = p.getAttribute("data-panel") !== t.getAttribute("data-tab");
+        });
+      });
+    });
+  });
+
+  /* ---------- cost calculator ---------- */
+  (function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var money = function (v) {
+      if (v >= 100) return "$" + Math.round(v).toLocaleString();
+      if (v >= 0.995) return "$" + v.toFixed(2);
+      return v < 0.005 ? "<$0.01" : "$" + v.toFixed(2);
+    };
+    var fmtTok = function (t) {
+      return t >= 1e6 ? (t / 1e6).toFixed(1).replace(/\.0$/, "") + "M"
+                      : Math.round(t / 1e3) + "k";
+    };
+    function update() {
+      var docs = +$("c-docs").value;
+      var pages = +$("c-pages").value;
+      var price = Math.max(0.01, +$("c-price").value || 0.25);
+      var disc = +$("c-disc").value;
+
+      var docTok = pages * 500;
+      var perDoc = Math.max(1, Math.round(docTok / 512));
+      var chunks = docs * perDoc;
+      var perCall = docTok + 512 + 90;
+      var corpusTok = docs * docTok;
+
+      var tooShort = docTok < 1024;
+      var effDisc = tooShort ? 0 : disc;
+
+      var embed = corpusTok / 1e6 * 0.13;
+      var noCache = chunks * perCall / 1e6 * price;
+      var cachedBillable = docs * (perCall + (perDoc - 1) * (602 + docTok * (1 - effDisc)));
+      var cached = cachedBillable / 1e6 * price;
+      var plain = embed;
+      var ctxCached = cached + embed;
+      var ctxNo = noCache + embed;
+
+      $("c-tokens").textContent = fmtTok(corpusTok);
+      $("c-chunks").textContent = chunks.toLocaleString();
+      $("c-mult").textContent = plain > 0 ? Math.max(1, Math.round(ctxCached / plain)) + "×" : "—";
+      $("c-plain").textContent = money(plain);
+      $("c-nocache").textContent = money(ctxNo);
+      $("c-cached").textContent = money(ctxCached);
+
+      var max = Math.max(ctxNo, ctxCached, plain, 1e-9);
+      $("c-plain-bar").style.width = Math.max(1, plain / max * 100) + "%";
+      $("c-nocache-bar").style.width = Math.max(1, ctxNo / max * 100) + "%";
+      $("c-cached-bar").style.width = Math.max(1, ctxCached / max * 100) + "%";
+
+      $("c-docs-v").textContent = docs.toLocaleString();
+      $("c-pages-v").textContent = pages;
+      $("c-warn").classList.toggle("show", tooShort);
+    }
+    ["c-docs", "c-pages", "c-price", "c-disc"].forEach(function (id) {
+      $(id).addEventListener("input", update);
+    });
+    update();
+  })();
+
+  /* ---------- query switcher (real offline_demo.py output) ---------- */
+  (function () {
+    var DATA = [
+      {
+        q: "Is Project Nightingale under or over budget?",
+        plain: { hit: "nightingale.md  [Status Report — title chunk]", ok: false,
+                 note: "right document by luck, wrong chunk — the title names the project but holds no numbers" },
+        ctx:   { hit: "nightingale.md  [… › Budget]", ok: true,
+                 ans: "Spending is 12 percent under plan for the quarter. [S1]" }
+      },
+      {
+        q: "Is Project Icarus under or over budget?",
+        plain: { hit: "icarus.md  [Status Report — title chunk]", ok: false,
+                 note: "again the title decoy: contains the name, not the answer" },
+        ctx:   { hit: "icarus.md  [… › Budget]", ok: true,
+                 ans: "Spending is 30 percent over plan for the quarter. [S1]" }
+      },
+      {
+        q: "Is the Project Icarus rollout ahead or behind schedule?",
+        plain: { hit: "nightingale.md  [… › Timeline]", ok: false,
+                 note: "wrong document entirely — an Icarus question answered from Nightingale's timeline" },
+        ctx:   { hit: "icarus.md  [… › Timeline]", ok: true,
+                 ans: "The rollout has slipped three weeks behind schedule. [S1]" }
+      }
+    ];
+    var out = document.getElementById("qs-out");
+    var wrap = document.getElementById("qs-buttons");
+    var buttons = wrap.querySelectorAll("button");
+    function esc(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function render(i) {
+      var d = DATA[i];
+      out.innerHTML =
+        '<p style="font-family:var(--serif); font-style:italic; margin:.4rem 0 .6rem;">“' + esc(d.q) + '”</p>' +
+        '<div class="qs-row"><div class="qs-who">Plain top-1</div><div>' +
+          '<div class="qs-hit"><span class="miss">✗</span> ' + esc(d.plain.hit) + '</div>' +
+          '<div style="font-size:.82rem; color:var(--faint); margin-top:.15rem;">' + esc(d.plain.note) + '</div>' +
+        '</div></div>' +
+        '<div class="qs-row"><div class="qs-who">Contextual top-1</div><div>' +
+          '<div class="qs-hit"><span class="ok">✓</span> ' + esc(d.ctx.hit) + '</div>' +
+          '<div class="qs-ans">“' + esc(d.ctx.ans) + '”</div>' +
+        '</div></div>';
+    }
+    buttons.forEach(function (b, i) {
+      b.addEventListener("click", function () {
+        buttons.forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        render(+b.getAttribute("data-q"));
+      });
+    });
+    render(0);
+  })();
+})();
 </script>

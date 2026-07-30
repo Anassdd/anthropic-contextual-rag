@@ -119,6 +119,24 @@
   .c-kw { color: var(--accent); }
   .c-str { color: var(--good); }
 
+  /* notebook-style cells */
+  .cell { margin: 1.4rem 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .cell .cell-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: .45rem 1.1rem; background: var(--panel-deep);
+    font-family: var(--mono); font-size: .7rem; color: var(--faint);
+    letter-spacing: .06em;
+  }
+  .cell pre { margin: 0; border: 0; border-radius: 0; }
+  .cell .out {
+    border-top: 1px solid var(--line);
+    padding: .8rem 1.2rem; background: var(--bg);
+    font-family: var(--mono); font-size: .8rem; line-height: 1.6;
+    white-space: pre-wrap; overflow-x: auto; color: var(--slate);
+  }
+  .cell .out b { color: var(--ink); font-weight: 600; }
+  .cell .out .hi { color: var(--accent); }
+
   table { border-collapse: collapse; width: 100%; margin: 1.4rem 0; font-size: .92rem; }
   th {
     text-align: left; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
@@ -185,7 +203,7 @@
   <p class="kicker">anthropic-contextual-rag</p>
   <nav id="toc">
     <a href="#philosophy"><span class="n">01</span> Design philosophy</a>
-    <a href="#map"><span class="n">02</span> The map</a>
+    <a href="#map"><span class="n">02</span> One document's journey</a>
     <a href="#modules"><span class="n">03</span> Module tour</a>
     <a href="#install"><span class="n">04</span> Install</a>
     <a href="#configure"><span class="n">05</span> Configure</a>
@@ -213,6 +231,8 @@
         search, reranking, and grounded answering — behind a facade small enough to
         learn in five minutes and seams deliberate enough to replace any stage.
         This guide covers how it's built, how to use it, and how to tune it.
+        New to RAG itself? Read <a href="course.html">Part 1, the course</a> first —
+        it builds every concept from zero; this page assumes them.
       </p>
     </div>
   </header>
@@ -263,7 +283,7 @@
   </section>
 
   <section id="map" class="wide">
-    <h2><span class="sn">02</span>The map</h2>
+    <h2><span class="sn">02</span>One document's journey</h2>
     <div class="measure">
       <p>
         Two flows share one store. Ingestion runs once per document and does all the
@@ -289,7 +309,60 @@
       </div>
     </div>
     <div class="measure">
-      <p>The source tree mirrors the flows — one module per stage, named for what it does:</p>
+      <p>
+        Abstract diagrams lie by omission, so let's follow one real document all the
+        way through and look at the actual artifacts each stage produces. Every
+        output below is from <code>examples/offline_demo.py</code> — the shipped
+        demo that runs this exact pipeline with the LLM endpoint faked, so you can
+        reproduce all of it in ten seconds with no API key.
+      </p>
+
+      <div class="cell">
+        <div class="cell-head"><span>1 · chunk</span><span>chunker.py</span></div>
+        <pre><code><span class="c-kw">from</span> contextual_rag <span class="c-kw">import</span> chunk_markdown
+
+chunks = chunk_markdown(REPORT, doc_id=<span class="c-str">"nightingale.md"</span>)
+<span class="c-kw">for</span> c <span class="c-kw">in</span> chunks:
+    print(c.chunk_id, <span class="c-str">"·"</span>, c.section)</code></pre>
+        <div class="out">nightingale.md::0 · Project Nightingale — Status Report
+nightingale.md::1 · … › Overview
+nightingale.md::2 · … › Budget
+nightingale.md::3 · … › Timeline</div>
+      </div>
+
+      <div class="cell">
+        <div class="cell-head"><span>2 · contextualize</span><span>contextual.py — one LLM call per chunk</span></div>
+        <pre><code>ctx = contextualize_chunks(REPORT, chunks)
+print(ctx[2].context)</code></pre>
+        <div class="out"><span class="hi">This chunk is from 'Project Nightingale — Status Report', in the Budget section.</span>
+<b>ingestion report:</b> 4 chunks · 1,077 contextualizer tokens · 348 cached</div>
+      </div>
+
+      <div class="cell">
+        <div class="cell-head"><span>3 · store, then search</span><span>store.py · search.py — blurb indexed, original cited</span></div>
+        <pre><code>hits = rag.search(<span class="c-str">"Is Project Nightingale under or over budget?"</span>, k=2)
+print(hits[0].score, hits[0].citation, hits[0].section)
+print(<span class="c-str">"blurb:"</span>, hits[0].context)</code></pre>
+        <div class="out">0.0325  nightingale.md  Project Nightingale — Status Report › Budget
+blurb: This chunk is from 'Project Nightingale — Status Report', in the Budget section.</div>
+      </div>
+
+      <div class="cell">
+        <div class="cell-head"><span>4 · answer</span><span>answer.py — grounded, cited, doc-scoped</span></div>
+        <pre><code>ans = rag.ask(<span class="c-str">"What is the budget situation?"</span>, doc_id=<span class="c-str">"nightingale.md"</span>)
+print(ans.text)
+print([s.citation <span class="c-kw">for</span> s <span class="c-kw">in</span> ans.sources])</code></pre>
+        <div class="out">Spending is 12 percent under plan for the quarter. <b>[S1]</b>
+['nightingale.md', 'nightingale.md', 'nightingale.md', 'nightingale.md']</div>
+      </div>
+
+      <p>
+        That's the whole library in four artifacts: chunks with provenance, a blurb
+        per chunk, a store that indexes blurb+chunk but cites the original, and an
+        answer constrained to numbered sources. Every module below exists to produce
+        one of them. The source tree mirrors the flows — one module per stage, named
+        for what it does:
+      </p>
     </div>
     <pre><code>src/contextual_rag/
 ├── rag.py           <span class="c-cm"># ContextualRAG facade — the one-object API</span>
@@ -573,7 +646,14 @@ DOCINTEL_KEY=...</code></pre>
 
   <section id="tuning" class="measure">
     <h2><span class="sn">08</span>Tuning cost &amp; speed</h2>
-    <p>Where the money and the milliseconds actually go:</p>
+    <p>
+      Where the money and the milliseconds actually go. (For the full economics —
+      worked cost math vs. plain RAG, and a provider-by-provider caching guide
+      covering OpenAI, Azure and Anthropic — see the course's
+      <a href="course.html#money">money</a> and
+      <a href="course.html#caching">caching</a> chapters, or
+      <code>docs/costs.md</code> and <code>docs/caching.md</code> in the repo.)
+    </p>
     <div class="table-scroll">
     <table>
       <tr><th>Phase</th><th>Cost</th><th>When</th></tr>
