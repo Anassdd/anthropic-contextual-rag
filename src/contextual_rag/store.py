@@ -75,7 +75,10 @@ class VectorStore:
         import chromadb
 
         self.domain_id = domain_id
-        self._path = path or get_settings().vector_dir or _DEFAULT_DIR
+        # Resolved so two spellings of one directory ("./x", "x", "~/x") are
+        # one corpus — and share one index-cache entry instead of two.
+        raw = path or get_settings().vector_dir or _DEFAULT_DIR
+        self._path = str(Path(raw).expanduser().resolve())
         #: Keys the query-side index cache (path + collection identify a corpus).
         self.cache_key = (self._path, domain_id)
         Path(self._path).mkdir(parents=True, exist_ok=True)
@@ -189,7 +192,10 @@ class VectorStore:
         index_cache.invalidate(self.cache_key)
 
     def drop(self) -> None:
-        """Delete the collection entirely (idempotent)."""
+        """Delete the collection entirely (idempotent).
+
+        Terminal: this instance must not be used afterwards — construct a new
+        :class:`VectorStore` to recreate the collection."""
         try:
             self._client.delete_collection(_collection_name(self.domain_id))
         except Exception:

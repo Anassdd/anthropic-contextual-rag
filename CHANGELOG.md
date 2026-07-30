@@ -4,6 +4,52 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-07-20
+
+An engineering-review release: a fresh end-to-end audit of the whole library,
+fixing the correctness issues it found and hardening the failure modes around
+configuration. No retrieval behavior changed for well-formed inputs — the
+published benchmark numbers in `docs/evaluation.md` remain valid.
+
+### Added
+- `examples/offline_demo.py` — the full pipeline end to end with **no API key
+  and no network**: the endpoint seam is faked in ~60 lines, everything else
+  runs for real, and the script ends in hard assertions (it doubles as an
+  end-to-end smoke test of a checkout). Includes a miniature plain-vs-contextual
+  A/B that reproduces the ambiguous-chunk failure mode.
+- `tests/test_usage.py` — the documented usage patterns (README quickstart,
+  doc-scoped questions, resumable ingestion, collection isolation, the
+  functional no-facade pipeline) as offline tests: if one fails, the docs lie.
+- `tests/test_config.py` — configuration loading, precedence, and validation.
+- `ContextualRAG.ask(..., doc_id=...)` — scope a question to one document
+  (search already supported it; ask now passes it through).
+
+### Changed
+- **Markdown pipe tables are now atomic** in the chunker, like HTML tables:
+  the vision parser emits tables in pipe form, and an oversized one used to be
+  sentence-split — tearing rows mid-table. Regression-tested.
+- `configure()`/env values for `retrieval_rerank` and `parser` are validated:
+  a typo like `RETRIEVAL_RERANK=none` used to silently select the **LLM**
+  reranker (surprise cost on every query); it now raises `ConfigError` at
+  load. `rerank()` likewise rejects unknown modes.
+- Importing the package no longer has side effects: `.env` is read on first
+  settings load, not at import time.
+- `ContextualRAG.ingest_pdf(bytes)` now requires `filename`: the old default
+  (`"document.pdf"`) made two byte-source ingestions silently overwrite each
+  other, since chunk ids derive from the doc id.
+
+### Fixed
+- Endpoint (cross-encoder) rerank scores survive: `_apply_order` used to
+  overwrite the remote `relevance_score` with reciprocal rank, so
+  `scores["rerank"]` lied about what the reranker said.
+- Malformed numeric env vars (`CONTEXT_DOC_CAP=abc`, or set-but-empty) raise a
+  `ConfigError` naming the variable, instead of a bare `ValueError` (or crash)
+  from deep inside settings loading.
+- Chunks now carry the `domain_id` of the collection they are stored in;
+  `ingest_*` used to stamp `"default"` regardless of the target collection.
+- The store's cache identity uses the *resolved* path, so two spellings of one
+  directory (`./x`, `x`, `~/x`) share one index-cache entry instead of two.
+
 ## [0.2.0] — 2026-07-17
 
 ### Added

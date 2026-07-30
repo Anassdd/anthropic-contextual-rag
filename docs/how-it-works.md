@@ -84,9 +84,10 @@ is available as a deterministic, in-tenant alternative behind the same
 ### 2. Chunking — `chunker.py`
 
 Cuts on real structure, in order of preference: headings → paragraphs →
-sentences → (only for a single giant sentence) hard character cuts. Three
+sentences → (only for a single giant sentence) hard character cuts. Four
 block types are **atomic** and never split, even oversized: fenced code,
-display math, HTML tables — a torn formula is worse than a big chunk.
+display math, Markdown pipe tables, HTML tables — a torn formula or table row
+is worse than a big chunk.
 ~512-token targets, a sentence-snapped ~64-token overlap so boundary sentences
 survive, and provenance (doc, pages, heading trail) on every chunk.
 

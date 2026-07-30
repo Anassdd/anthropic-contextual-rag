@@ -21,6 +21,11 @@ Optional extras — add what you need:
 
 For local development: `git clone … && pip install -e ".[pdf,tokens,dev]"`.
 
+No key yet? `python examples/offline_demo.py` runs the entire pipeline —
+chunker, contextualizer, hybrid search, grounded answer — with the endpoint
+faked, so you can see the library work (and verify your checkout) before
+configuring anything.
+
 ## Configure
 
 The package talks to **any OpenAI-compatible endpoint**. Configuration comes
@@ -115,9 +120,11 @@ print(top.scores)                       # {'dense': 0.83, 'bm25': 7.1, 'rrf': 0.
 
 ```python
 rag.search("what does the contract say about termination?", doc_id="contract.pdf")
+rag.ask("what does the contract say about termination?", doc_id="contract.pdf")
 ```
 
-Both retrievers are scoped — another document's passages cannot leak in.
+Both retrievers are scoped — another document's passages cannot leak into the
+results or the answer's sources.
 
 ### Multiple corpora, one process
 

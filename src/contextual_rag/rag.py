@@ -79,20 +79,28 @@ class ContextualRAG:
 
         Args:
             source: PDF bytes, or a path to a PDF file.
-            filename: Overrides the stored doc_id (defaults to the file's
-                name; required to be meaningful when passing bytes).
+            filename: The stored doc_id (defaults to the file's name when a
+                path is given; **required** when passing bytes).
             context_model: Override the blurb model.
 
         Returns:
             The ingestion report (see :mod:`contextual_rag.ingest`).
+
+        Raises:
+            ValueError: If ``source`` is bytes and no ``filename`` is given —
+                a default name would make two such ingestions silently
+                overwrite each other (chunk ids derive from the doc_id).
         """
         if isinstance(source, (str, Path)):
             path = Path(source)
             data = path.read_bytes()
             filename = filename or path.name
         else:
+            if not filename:
+                raise ValueError(
+                    "filename is required when passing PDF bytes — it becomes "
+                    "the doc_id used for storage and citations.")
             data = source
-            filename = filename or "document.pdf"
         return _ingest_pdf(data, filename, store=self.store,
                            context_model=context_model)
 
@@ -140,18 +148,20 @@ class ContextualRAG:
         return _search_trace(query, k=k, store=self.store,
                              rerank_mode=self.rerank_mode, doc_id=doc_id)
 
-    def ask(self, query: str, *, k: int = 6) -> Answer:
+    def ask(self, query: str, *, k: int = 6, doc_id: str | None = None) -> Answer:
         """Retrieve, then generate a grounded answer with ``[S#]`` citations.
 
         Args:
             query: The question, verbatim.
             k: How many chunks to ground the answer on.
+            doc_id: Scope retrieval to one source document, so a per-document
+                question can't be answered from another document's passages.
 
         Returns:
             An :class:`~contextual_rag.types.Answer`; each ``[S{i+1}]`` in
             ``.text`` refers to ``.sources[i]``.
         """
-        return _answer_from(query, self.search(query, k=k))
+        return _answer_from(query, self.search(query, k=k, doc_id=doc_id))
 
     # ----------------------------------------------------------- housekeeping
 

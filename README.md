@@ -117,7 +117,8 @@ src/contextual_rag/
 ├── types.py         # Chunk, ScoredChunk, RetrievalTrace, Answer
 └── parsing/         # optional: tiered vision parser + Azure Document Intelligence
 
-examples/quickstart.py    # smallest end-to-end run
+examples/offline_demo.py  # full pipeline, NO key/network — run this first
+examples/quickstart.py    # smallest end-to-end run against a real endpoint
 examples/benchmark.py     # the contextual-vs-plain A/B measurement
 tests/                    # offline suite — LLM and embeddings faked, no keys
 ```
@@ -125,6 +126,7 @@ tests/                    # offline suite — LLM and embeddings faked, no keys
 ## Tests
 
 ```bash
+python examples/offline_demo.py   # end-to-end demo + smoke test, no key needed
 pip install -e ".[dev]"
 pytest        # offline — LLM and embeddings faked, a few seconds
 ruff check .  # lint-clean

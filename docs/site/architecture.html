@@ -1,0 +1,717 @@
+<title>anthropic-contextual-rag — The Package, Inside Out</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #FAF9F5;
+    --panel: #F0EEE6;
+    --panel-deep: #E8E5DA;
+    --ink: #191919;
+    --slate: #5E5D59;
+    --faint: #8A8781;
+    --accent: #C15F3C;
+    --accent-soft: #E8CDBF;
+    --good: #4E7A5A;
+    --line: #DDD9CC;
+    --code-bg: #F0EEE6;
+    --serif: "Charter", "Iowan Old Style", "Georgia", "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1F1D18; --panel: #282520; --panel-deep: #2F2C25; --ink: #F0EEE6;
+      --slate: #B3AFA4; --faint: #8A8781; --accent: #D97757; --accent-soft: #5A3B2C;
+      --good: #86B294; --line: #3A362D; --code-bg: #282520;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #FAF9F5; --panel: #F0EEE6; --panel-deep: #E8E5DA; --ink: #191919;
+    --slate: #5E5D59; --faint: #8A8781; --accent: #C15F3C; --accent-soft: #E8CDBF;
+    --good: #4E7A5A; --line: #DDD9CC; --code-bg: #F0EEE6;
+  }
+  :root[data-theme="dark"] {
+    --bg: #1F1D18; --panel: #282520; --panel-deep: #2F2C25; --ink: #F0EEE6;
+    --slate: #B3AFA4; --faint: #8A8781; --accent: #D97757; --accent-soft: #5A3B2C;
+    --good: #86B294; --line: #3A362D; --code-bg: #282520;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 1.0525rem; line-height: 1.68;
+  }
+
+  .rail {
+    position: fixed; inset: 0 auto 0 0; width: 264px;
+    padding: 2.2rem 1.6rem 2rem; border-right: 1px solid var(--line);
+    background: var(--bg); overflow-y: auto;
+  }
+  .rail .wordmark { font-family: var(--serif); font-size: 1.22rem; line-height: 1.25; margin: 0 0 .25rem; }
+  .rail .wordmark em { font-style: italic; color: var(--accent); }
+  .rail .kicker {
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--faint); margin: 0 0 1.8rem;
+  }
+  .rail nav { display: flex; flex-direction: column; gap: .12rem; }
+  .rail a {
+    display: flex; gap: .6rem; align-items: baseline;
+    padding: .34rem .55rem; border-radius: 4px; color: var(--slate);
+    text-decoration: none; font-size: .855rem; line-height: 1.35;
+    border-left: 2px solid transparent;
+  }
+  .rail a .n {
+    font-family: var(--mono); font-size: .68rem; color: var(--faint);
+    min-width: 1.35em; font-variant-numeric: tabular-nums;
+  }
+  .rail a:hover { color: var(--ink); background: var(--panel); }
+  .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .rail a.active { color: var(--accent); border-left-color: var(--accent); background: var(--panel); }
+  .rail a.active .n { color: var(--accent); }
+  .rail .rail-foot {
+    margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+    font-size: .78rem; color: var(--faint); line-height: 1.6;
+  }
+  .rail .rail-foot a { display: inline; padding: 0; border: 0; color: var(--accent); font-size: inherit; }
+  .rail .rail-foot a:hover { background: none; text-decoration: underline; }
+
+  main { margin-left: 264px; padding: 0 3.2rem 6rem; }
+  .measure { max-width: 68ch; }
+  .wide { max-width: 88ch; }
+
+  header.hero { padding: 5.2rem 0 3rem; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 1.1rem; font-weight: 600;
+  }
+  h1 {
+    font-family: var(--serif); font-weight: 500;
+    font-size: clamp(2.1rem, 4.5vw, 3.15rem); line-height: 1.12;
+    margin: 0 0 1.2rem; text-wrap: balance; letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede { font-size: 1.16rem; color: var(--slate); line-height: 1.6; margin: 0; }
+
+  section { padding-top: 3.6rem; }
+  h2 {
+    font-family: var(--serif); font-weight: 500; font-size: 1.72rem;
+    line-height: 1.22; margin: 0 0 .4rem; text-wrap: balance; letter-spacing: -0.008em;
+  }
+  h2 .sn {
+    font-family: var(--mono); font-size: .78rem; color: var(--accent);
+    display: block; margin-bottom: .55rem; letter-spacing: .08em;
+  }
+  h3 { font-family: var(--serif); font-weight: 500; font-size: 1.22rem; margin: 2.1rem 0 .3rem; }
+  p { margin: .85rem 0; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  strong { font-weight: 600; }
+
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 1rem 1.2rem; overflow-x: auto;
+    font-family: var(--mono); font-size: .84rem; line-height: 1.6; margin: 1.3rem 0;
+  }
+  code { font-family: var(--mono); font-size: .875em; background: var(--panel); padding: .1em .38em; border-radius: 4px; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .c-cm { color: var(--faint); }
+  .c-kw { color: var(--accent); }
+  .c-str { color: var(--good); }
+
+  table { border-collapse: collapse; width: 100%; margin: 1.4rem 0; font-size: .92rem; }
+  th {
+    text-align: left; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--faint); font-weight: 600; padding: .5rem .8rem;
+    border-bottom: 1.5px solid var(--ink);
+  }
+  td { padding: .55rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td code { white-space: nowrap; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: .85rem; }
+  tr.hl td { background: var(--panel); font-weight: 600; }
+  .table-scroll { overflow-x: auto; }
+
+  .pipe { margin: 1.6rem 0; }
+  .pipe .lane-label {
+    font-size: .68rem; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--faint); margin: 1.1rem 0 .5rem; font-weight: 600;
+  }
+  .pipe .lane { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+  .pipe .node {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: .42rem .8rem; font-family: var(--mono); font-size: .78rem; white-space: nowrap;
+  }
+  .pipe .node.hot { background: var(--accent-soft); border-color: var(--accent); }
+  .pipe .arrow { color: var(--faint); font-size: .8rem; }
+
+  .callout {
+    margin: 1.6rem 0; padding: 1.1rem 1.3rem; background: var(--panel);
+    border-radius: 8px; border: 1px solid var(--line); font-size: .95rem;
+  }
+  .callout .co-title {
+    font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700; margin-bottom: .35rem;
+  }
+  .callout p { margin: .4rem 0; }
+
+  .seams { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 1rem; margin: 1.6rem 0; }
+  .seam {
+    border: 1px solid var(--line); border-radius: 8px; padding: 1.05rem 1.2rem;
+    background: var(--panel);
+  }
+  .seam .s-name { font-family: var(--mono); font-size: .8rem; color: var(--accent); margin-bottom: .4rem; }
+  .seam h4 { font-family: var(--serif); font-weight: 500; font-size: 1.08rem; margin: 0 0 .35rem; }
+  .seam p { margin: 0; font-size: .89rem; color: var(--slate); }
+
+  .modtable td:first-child { font-family: var(--mono); font-size: .82rem; white-space: nowrap; }
+
+  footer.end {
+    margin-top: 5rem; padding-top: 2rem; border-top: 1px solid var(--line);
+    color: var(--slate); font-size: .92rem;
+  }
+
+  @media (max-width: 900px) {
+    .rail { position: static; width: auto; border-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 1.4rem; }
+    .rail nav { flex-direction: row; flex-wrap: wrap; gap: .3rem; }
+    .rail a { border-left: 0; border: 1px solid var(--line); }
+    .rail a.active { border-color: var(--accent); }
+    main { margin-left: 0; padding: 0 1.4rem 4rem; }
+    header.hero { padding-top: 2.4rem; }
+  }
+</style>
+
+<aside class="rail">
+  <p class="wordmark">The Package, <em>Inside Out</em></p>
+  <p class="kicker">anthropic-contextual-rag</p>
+  <nav id="toc">
+    <a href="#philosophy"><span class="n">01</span> Design philosophy</a>
+    <a href="#map"><span class="n">02</span> The map</a>
+    <a href="#modules"><span class="n">03</span> Module tour</a>
+    <a href="#install"><span class="n">04</span> Install</a>
+    <a href="#configure"><span class="n">05</span> Configure</a>
+    <a href="#tour"><span class="n">06</span> The five-minute tour</a>
+    <a href="#recipes"><span class="n">07</span> Recipes</a>
+    <a href="#tuning"><span class="n">08</span> Tuning cost &amp; speed</a>
+    <a href="#extend"><span class="n">09</span> Testing &amp; extending</a>
+    <a href="#benchmark"><span class="n">10</span> Reproduce the numbers</a>
+  </nav>
+  <div class="rail-foot">
+    Part 1: <a href="course.html">the technique, as a course</a>.<br>
+    Technique by Anthropic — <a href="https://www.anthropic.com/news/contextual-retrieval">blog</a> ·
+    <a href="https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide">cookbook</a>.
+  </div>
+</aside>
+
+<main>
+  <header class="hero">
+    <div class="measure">
+      <p class="eyebrow">Developer guide · Architecture &amp; usage</p>
+      <h1>From raw PDFs to cited answers, in <em>one object</em></h1>
+      <p class="lede">
+        <code>anthropic-contextual-rag</code> is a production-shaped implementation of
+        Contextual Retrieval: a structure-aware chunker, the contextualizer, hybrid
+        search, reranking, and grounded answering — behind a facade small enough to
+        learn in five minutes and seams deliberate enough to replace any stage.
+        This guide covers how it's built, how to use it, and how to tune it.
+      </p>
+    </div>
+  </header>
+
+  <section id="philosophy" class="measure">
+    <h2><span class="sn">01</span>Design philosophy: three seams</h2>
+    <p>
+      The package is organized around a simple bet: you will eventually want to swap
+      something — the LLM provider, a retriever, the PDF parser — and the cost of that
+      swap is decided the day the code is structured, not the day you need it.
+      So the architecture is three deliberate seams, and everything else is plain
+      functions between them:
+    </p>
+    <div class="seams">
+      <div class="seam">
+        <div class="s-name">llm.py</div>
+        <h4>The endpoint seam</h4>
+        <p>The only file that imports the OpenAI SDK. Everything else calls
+        <code>llm.chat</code> / <code>llm.embed</code> / <code>llm.transcribe_image</code>.
+        Swap providers with one env var; fake the whole package in tests by patching
+        two functions.</p>
+      </div>
+      <div class="seam">
+        <div class="s-name">types.ScoredChunk</div>
+        <h4>The retriever contract</h4>
+        <p>A retriever produces a ranked list of chunk ids and joins the RRF fusion.
+        Add a knowledge graph, SQL, or an API as a third voter — nothing downstream
+        changes.</p>
+      </div>
+      <div class="seam">
+        <div class="s-name">parsing.ParsedDoc</div>
+        <h4>The parser contract</h4>
+        <p>Any parser returning per-page Markdown plugs into the same
+        <code>ingest_pdf</code> path. The vision parser and Azure Document
+        Intelligence are both just backends behind it.</p>
+      </div>
+    </div>
+    <p>
+      Two more principles run through everything. <strong>Lazy configuration</strong>:
+      importing the package never requires a credential — only actually calling an LLM
+      does, and a missing key raises a <code>ConfigError</code> that says exactly what
+      to set. A library that explodes at import time can't be tested, vendored, or
+      partially used. And <strong>no infrastructure</strong>: the vector store is
+      embedded Chroma (on-disk, no server), BM25 is pure Python (sub-millisecond at
+      thousands-of-chunks scale) — the whole pipeline runs from a bare
+      <code>pip install</code>.
+    </p>
+  </section>
+
+  <section id="map" class="wide">
+    <h2><span class="sn">02</span>The map</h2>
+    <div class="measure">
+      <p>
+        Two flows share one store. Ingestion runs once per document and does all the
+        expensive work; queries are cheap and fast.
+      </p>
+    </div>
+    <div class="pipe" aria-label="Pipeline diagram">
+      <div class="lane-label">Ingestion — once per document</div>
+      <div class="lane">
+        <span class="node">PDF / Markdown</span><span class="arrow">→</span>
+        <span class="node">parse</span><span class="arrow">→</span>
+        <span class="node">chunk</span><span class="arrow">→</span>
+        <span class="node hot">contextualize</span><span class="arrow">→</span>
+        <span class="node">embed + store</span>
+      </div>
+      <div class="lane-label">Query — per question</div>
+      <div class="lane">
+        <span class="node">question</span><span class="arrow">→</span>
+        <span class="node">dense ‖ BM25</span><span class="arrow">→</span>
+        <span class="node">RRF fusion</span><span class="arrow">→</span>
+        <span class="node hot">rerank</span><span class="arrow">→</span>
+        <span class="node">grounded answer [S#]</span>
+      </div>
+    </div>
+    <div class="measure">
+      <p>The source tree mirrors the flows — one module per stage, named for what it does:</p>
+    </div>
+    <pre><code>src/contextual_rag/
+├── rag.py           <span class="c-cm"># ContextualRAG facade — the one-object API</span>
+├── config.py        <span class="c-cm"># env / .env / configure() → Settings (lazy)</span>
+├── llm.py           <span class="c-cm"># THE endpoint seam — only file importing the OpenAI SDK</span>
+├── chunker.py       <span class="c-cm"># structure-aware Markdown chunker</span>
+├── contextual.py    <span class="c-cm"># the contextualizer (whole-doc + excerpt modes)</span>
+├── store.py         <span class="c-cm"># Chroma vector store (embedded, persistent)</span>
+├── bm25.py          <span class="c-cm"># pure-Python Okapi BM25</span>
+├── search.py        <span class="c-cm"># dense ‖ BM25 → RRF → rerank, with per-stage trace</span>
+├── rerank.py        <span class="c-cm"># llm / endpoint / off</span>
+├── answer.py        <span class="c-cm"># grounded, cited generation</span>
+├── ingest.py        <span class="c-cm"># parse → chunk → contextualize → store, one call</span>
+├── index_cache.py   <span class="c-cm"># per-collection records + BM25 cache</span>
+├── types.py         <span class="c-cm"># Chunk, ScoredChunk, RetrievalTrace, Answer</span>
+└── parsing/         <span class="c-cm"># optional: tiered vision parser + Azure Doc Intelligence</span>
+
+examples/offline_demo.py  <span class="c-cm"># full pipeline, no key/network — run this first</span>
+examples/quickstart.py    <span class="c-cm"># smallest end-to-end run against a real endpoint</span>
+examples/benchmark.py     <span class="c-cm"># the contextual-vs-plain A/B measurement</span>
+tests/                    <span class="c-cm"># offline suite — LLM &amp; embeddings faked, no keys</span></code></pre>
+  </section>
+
+  <section id="modules" class="wide">
+    <h2><span class="sn">03</span>Module tour — what each file does, and why</h2>
+    <div class="table-scroll">
+    <table class="modtable">
+      <tr><th>Module</th><th>What it does</th><th>The design decision inside</th></tr>
+      <tr>
+        <td>rag.py</td>
+        <td>The <code>ContextualRAG</code> facade: <code>ingest_pdf</code>,
+            <code>ingest_markdown</code>, <code>search</code>, <code>ask</code>,
+            <code>search_trace</code>, <code>doc_ids</code> on a named, persistent collection.</td>
+        <td>A thin veneer — every method delegates to a plain function you can call
+            without the facade. The object is convenience, never a cage.</td>
+      </tr>
+      <tr>
+        <td>config.py</td>
+        <td>Merges <code>configure(...)</code> → environment → <code>.env</code> into a
+            <code>Settings</code> object, lazily.</td>
+        <td>Code beats env beats file, and nothing is read until first use — the
+            package imports clean with zero credentials.</td>
+      </tr>
+      <tr>
+        <td>llm.py</td>
+        <td><code>chat</code> (buffered + streaming), <code>embed</code> (batched),
+            <code>transcribe_image</code> — against any OpenAI-compatible endpoint.</td>
+        <td>The single provider seam. Also absorbs provider quirks (e.g. retrying with
+            <code>max_completion_tokens</code> when a model rejects <code>max_tokens</code>)
+            so callers never see them.</td>
+      </tr>
+      <tr>
+        <td>chunker.py</td>
+        <td>Cuts Markdown on real structure: headings → paragraphs → sentences → hard
+            cuts only for a single giant sentence. ~512-token targets, sentence-snapped
+            ~64-token overlap, full provenance (doc, pages, heading trail) per chunk.</td>
+        <td>Code fences, display math, and tables are <strong>atomic</strong> — never
+            split even oversized; a torn formula is worse than a big chunk. And nothing
+            is lost: every character lands in a chunk, which is what excerpt mode
+            depends on.</td>
+      </tr>
+      <tr>
+        <td>contextual.py</td>
+        <td>One temperature-0 chat call per chunk using Anthropic's published prompt,
+            document first. Falls back to head-plus-region <em>excerpt mode</em> for
+            documents over <code>CONTEXT_DOC_CAP</code>.</td>
+        <td>The first call of each prefix runs <em>alone</em> to prime the provider's
+            prompt cache; only then does the pool fan out. Blurb hygiene strips
+            “Here is the context:” noise that would otherwise get embedded.</td>
+      </tr>
+      <tr>
+        <td>store.py</td>
+        <td>Embedded Chroma: per chunk, the embedding of <em>blurb + chunk</em>, the
+            <em>original text</em> as the document, provenance as metadata.</td>
+        <td>Writes are one atomic per-document upsert — a document's presence means it
+            was <em>fully</em> ingested, which is what makes bulk ingestion resumable.</td>
+      </tr>
+      <tr>
+        <td>bm25.py</td>
+        <td>Okapi BM25 in pure Python over the same contextual text.</td>
+        <td>No search server. A full scoring pass is sub-millisecond at this scale;
+            operating Elasticsearch would earn nothing.</td>
+      </tr>
+      <tr>
+        <td>search.py</td>
+        <td>Runs dense and BM25, fuses with Reciprocal Rank Fusion, reranks, and
+            records a <code>RetrievalTrace</code> of every intermediate stage.</td>
+        <td>Rank-based fusion because cosine and BM25 scores are incomparable scales;
+            the trace exists because “why didn't my chunk come back?” should be a
+            lookup, not an investigation.</td>
+      </tr>
+      <tr>
+        <td>rerank.py</td>
+        <td>Three modes: <code>llm</code> (one RankGPT-style listwise call, default),
+            <code>endpoint</code> (hosted cross-encoder, Cohere/Jina shape),
+            <code>off</code>.</td>
+        <td>Ranks <em>blurb + chunk</em>, never the bare chunk (measured: bare chunks
+            made it worse). Defensive by contract: invalid indices dropped, forgotten
+            candidates re-appended — a flaky reranker can reorder but never lose.</td>
+      </tr>
+      <tr>
+        <td>answer.py</td>
+        <td>Grounded generation: numbered sources, inline <code>[S#]</code> citations,
+            refuses when sources don't contain the answer, replies in the question's
+            language.</td>
+        <td>Citations resolve to document + page through the chunk's provenance —
+            every claim checkable, and the blurb never leaks into an answer.</td>
+      </tr>
+      <tr>
+        <td>ingest.py</td>
+        <td>The one-call pipelines: parse → chunk → contextualize → store, returning a
+            per-document report (chunk count, context tokens, cached tokens).</td>
+        <td><code>cached_tokens</code> in every report makes the caching economics
+            verifiable per corpus instead of assumed.</td>
+      </tr>
+      <tr>
+        <td>index_cache.py</td>
+        <td>Caches each collection's records and BM25 index so queries never pay a
+            rebuild; invalidated on writes.</td>
+        <td>Cached records are immutable templates — per-query scores are stamped onto
+            copies. The one honest gap (a same-count upsert from <em>another
+            process</em> is undetectable) is documented, not hidden.</td>
+      </tr>
+      <tr>
+        <td>parsing/</td>
+        <td>Optional PDF ingestion: per-page tiered routing — free text-layer
+            extraction for confidently clean prose, a vision LLM (Markdown + LaTeX,
+            figures <em>extracted</em> not labeled) for everything else. Azure Document
+            Intelligence as a config-swap alternative.</td>
+        <td>Routing is per page: one chart on a prose page sends that page to vision,
+            so figures are never silently dropped.</td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <section id="install" class="measure">
+    <h2><span class="sn">04</span>Install</h2>
+    <pre><code>pip install <span class="c-str">"anthropic-contextual-rag @ git+https://&lt;your-git-host&gt;/&lt;you&gt;/anthropic-contextual-rag.git"</span></code></pre>
+    <p>Extras are opt-in — take only what you need:</p>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Extra</th><th>Enables</th><th>Pulls in</th></tr>
+      <tr><td><code>pdf</code></td><td>PDF ingestion via the vision parser</td><td><code>pypdfium2</code>, <code>pillow</code></td></tr>
+      <tr><td><code>docintel</code></td><td>PDF ingestion via Azure Document Intelligence</td><td><code>azure-ai-documentintelligence</code></td></tr>
+      <tr><td><code>tokens</code></td><td>Exact token counting (else a safe heuristic)</td><td><code>tiktoken</code></td></tr>
+      <tr><td><code>dev</code></td><td>Test &amp; lint tooling</td><td><code>pytest</code>, <code>ruff</code></td></tr>
+    </table>
+    </div>
+    <p>For local development: <code>git clone … &amp;&amp; pip install -e ".[pdf,tokens,dev]"</code>.
+       The package ships its type hints (<code>py.typed</code>), so your editor and
+       <code>mypy</code> see the full API.</p>
+  </section>
+
+  <section id="configure" class="measure">
+    <h2><span class="sn">05</span>Configure</h2>
+    <p>
+      The package talks to <strong>any OpenAI-compatible endpoint</strong>.
+      Configuration merges three sources, earlier ones winning:
+      <code>configure(...)</code> in code, then environment variables, then a
+      <code>.env</code> file in the working directory.
+    </p>
+    <pre><code><span class="c-kw">from</span> contextual_rag <span class="c-kw">import</span> configure
+
+configure(api_key=<span class="c-str">"sk-..."</span>)                              <span class="c-cm"># standard OpenAI</span>
+configure(base_url=<span class="c-str">"https://gateway.example.com/v1"</span>)     <span class="c-cm"># corporate gateway</span>
+configure(chat_model=<span class="c-str">"gpt-5.4-mini"</span>,
+          embed_model=<span class="c-str">"text-embedding-3-large"</span>)</code></pre>
+    <p>The variables that matter, with their defaults:</p>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Variable</th><th>Default</th><th>Meaning</th></tr>
+      <tr><td><code>OPENAI_API_KEY</code></td><td>—</td><td>API key. May be blank for keyless gateways.</td></tr>
+      <tr><td><code>OPENAI_BASE_URL</code></td><td><em>standard OpenAI</em></td><td>Any OpenAI-compatible endpoint.</td></tr>
+      <tr><td><code>CHAT_MODEL</code></td><td><code>gpt-5.4-mini</code></td><td>Blurbs, LLM rerank, answers.</td></tr>
+      <tr><td><code>EMBED_MODEL</code></td><td><code>text-embedding-3-large</code></td><td>Embeddings; multilingual-strong recommended.</td></tr>
+      <tr><td><code>PARSE_MODEL</code></td><td><em>falls back to chat</em></td><td>Vision model for PDF pages.</td></tr>
+      <tr><td><code>CONTEXT_DOC_CAP</code></td><td><code>250000</code></td><td>Whole-document mode limit (tokens); above it, excerpt mode.</td></tr>
+      <tr><td><code>CONTEXT_PART_TOKENS</code></td><td><code>48000</code></td><td>Excerpt size for oversized documents.</td></tr>
+      <tr><td><code>CONTEXT_CONCURRENCY</code></td><td><code>4</code></td><td>Parallel blurb calls per prefix group; <code>1</code> = sequential.</td></tr>
+      <tr><td><code>RETRIEVAL_RERANK</code></td><td><code>llm</code></td><td><code>llm</code> | <code>endpoint</code> | <code>off</code>.</td></tr>
+      <tr><td><code>RERANK_MODEL</code> / <code>_BASE_URL</code> / <code>_API_KEY</code></td><td>—</td><td>Hosted cross-encoder for <code>endpoint</code> mode.</td></tr>
+      <tr><td><code>VECTOR_DIR</code></td><td><code>./.contextual_rag</code></td><td>Where the vector store persists.</td></tr>
+      <tr><td><code>PARSER</code></td><td><code>vision</code></td><td>PDF backend: <code>vision</code> | <code>docintel</code>.</td></tr>
+      <tr><td><code>CHAT_TEMPERATURE</code></td><td><code>0.2</code></td><td>Default generation temperature.</td></tr>
+    </table>
+    </div>
+  </section>
+
+  <section id="tour" class="measure">
+    <h2><span class="sn">06</span>The five-minute tour</h2>
+    <p>The whole API most users ever need:</p>
+    <pre><code><span class="c-kw">from</span> contextual_rag <span class="c-kw">import</span> ContextualRAG
+
+rag = ContextualRAG(<span class="c-str">"my-corpus"</span>)          <span class="c-cm"># a named, persistent collection</span>
+
+<span class="c-cm"># 1 · Ingest — parse → chunk → contextualize → embed → store</span>
+rag.ingest_pdf(<span class="c-str">"report.pdf"</span>)                          <span class="c-cm"># needs the [pdf] extra</span>
+rag.ingest_markdown(text, doc_id=<span class="c-str">"notes.md"</span>)          <span class="c-cm"># or skip parsing entirely</span>
+
+<span class="c-cm"># 2 · Search — hybrid (dense + BM25 + RRF), reranked, best first</span>
+hits = rag.search(<span class="c-str">"What drove Q3 margins?"</span>, k=8)
+<span class="c-kw">for</span> h <span class="c-kw">in</span> hits:
+    print(h.score, h.citation, h.section)
+
+<span class="c-cm"># 3 · Ask — grounded answer, constrained to sources, cited inline</span>
+ans = rag.ask(<span class="c-str">"What drove Q3 margins?"</span>)
+print(ans.text)                            <span class="c-cm"># "... margins rose 3pts [S1] ..."</span>
+print(ans.sources[0].citation)             <span class="c-cm"># "report.pdf, p.12"</span></code></pre>
+    <p>Every ingestion returns a report — the numbers that tell you what the document
+       cost and whether caching worked:</p>
+    <pre><code>report = rag.ingest_markdown(text, doc_id=<span class="c-str">"doc.md"</span>)
+<span class="c-cm"># {'doc_id': 'doc.md', 'chunks': 42, 'context_tokens': 61_204,
+#  'cached_tokens': 48_130, 'excerpted': False}</span></code></pre>
+    <p>
+      On a multi-page document, expect <code>cached_tokens</code> to be a large
+      fraction of <code>context_tokens</code>. If it isn't, something changed the
+      prompt prefix between calls — that's your caching alarm.
+    </p>
+  </section>
+
+  <section id="recipes" class="measure">
+    <h2><span class="sn">07</span>Recipes</h2>
+
+    <h3>Debug a retrieval with the per-stage trace</h3>
+    <p>
+      When an expected chunk doesn't come back, don't guess which stage lost it — look:
+    </p>
+    <pre><code>trace = rag.search_trace(<span class="c-str">"my question"</span>, k=8)
+print(trace.timings)                          <span class="c-cm"># {'dense_ms': 42.1, 'bm25_ms': 0.8, ...}</span>
+print([c.chunk_id <span class="c-kw">for</span> c <span class="c-kw">in</span> trace.dense][:5])  <span class="c-cm"># what embeddings thought</span>
+print([c.chunk_id <span class="c-kw">for</span> c <span class="c-kw">in</span> trace.bm25][:5])   <span class="c-cm"># what keywords thought</span>
+print([c.chunk_id <span class="c-kw">for</span> c <span class="c-kw">in</span> trace.fused][:5])  <span class="c-cm"># after RRF</span>
+print([c.chunk_id <span class="c-kw">for</span> c <span class="c-kw">in</span> trace.final])      <span class="c-cm"># what the answer will see</span>
+print(trace.final[0].scores)                  <span class="c-cm"># {'dense': .83, 'bm25': 7.1, 'rrf': .03, 'rerank': 1.0}</span></code></pre>
+    <p>
+      In both lists → RRF handled it. In neither → an indexing problem (was the
+      document ingested? under which <code>doc_id</code>?). In <code>fused</code> but
+      not <code>final</code> → the reranker demoted it.
+    </p>
+
+    <h3>Scope a question to one document</h3>
+    <pre><code>rag.search(<span class="c-str">"what does the contract say about termination?"</span>, doc_id=<span class="c-str">"contract.pdf"</span>)
+rag.ask(<span class="c-str">"what does the contract say about termination?"</span>, doc_id=<span class="c-str">"contract.pdf"</span>)</code></pre>
+    <p>Both retrievers are scoped — another document's passages cannot leak into the
+       results or the answer's sources.</p>
+
+    <h3>Multiple corpora, one process</h3>
+    <pre><code>finance = ContextualRAG(<span class="c-str">"finance"</span>)
+legal   = ContextualRAG(<span class="c-str">"legal"</span>, rerank=<span class="c-str">"off"</span>)   <span class="c-cm"># per-instance override</span></code></pre>
+    <p>Collections are fully isolated: separate Chroma collections, separate caches.</p>
+
+    <h3>Resume a bulk ingestion</h3>
+    <p>
+      Because each document is written in one atomic upsert, presence means
+      fully-ingested — so resuming is a set difference:
+    </p>
+    <pre><code>done = rag.doc_ids()
+<span class="c-kw">for</span> path <span class="c-kw">in</span> corpus_dir.glob(<span class="c-str">"*.md"</span>):
+    <span class="c-kw">if</span> path.name <span class="c-kw">not in</span> done:
+        rag.ingest_markdown(path.read_text(), doc_id=path.name)</code></pre>
+
+    <h3>Use the pipeline as functions — no facade</h3>
+    <p>Every stage is a plain function when you want to own the store or intercept a step:</p>
+    <pre><code><span class="c-kw">from</span> contextual_rag <span class="c-kw">import</span> (chunk_markdown, contextualize_chunks,
+                            VectorStore, search, answer_from)
+
+chunks = chunk_markdown(text, doc_id=<span class="c-str">"doc.md"</span>)
+ctx    = contextualize_chunks(text, chunks)      <span class="c-cm"># one LLM call per chunk</span>
+store  = VectorStore(<span class="c-str">"corpus"</span>)
+store.add(ctx)
+final  = search(<span class="c-str">"my question"</span>, store=store, rerank_mode=<span class="c-str">"llm"</span>)
+print(answer_from(<span class="c-str">"my question"</span>, final).text)</code></pre>
+
+    <h3>Azure Document Intelligence instead of the vision parser</h3>
+    <pre><code>PARSER=docintel
+DOCINTEL_ENDPOINT=https://&lt;resource&gt;.cognitiveservices.azure.com/
+DOCINTEL_KEY=...</code></pre>
+    <p>Same <code>ingest_pdf(...)</code> call — the backend swap is pure configuration.</p>
+  </section>
+
+  <section id="tuning" class="measure">
+    <h2><span class="sn">08</span>Tuning cost &amp; speed</h2>
+    <p>Where the money and the milliseconds actually go:</p>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Phase</th><th>Cost</th><th>When</th></tr>
+      <tr><td>Chunking</td><td>Free (local)</td><td>ingestion</td></tr>
+      <tr class="hl"><td>Contextualization</td><td>1 chat call per chunk; document prefix billed once, then cached rate</td><td>ingestion (one-time)</td></tr>
+      <tr><td>Embedding</td><td>Batched at ingestion (64 chunks/request) + 1 call per query</td><td>both</td></tr>
+      <tr><td>BM25</td><td>Free (local, pure Python)</td><td>query</td></tr>
+      <tr><td>Rerank (<code>llm</code>)</td><td>Exactly 1 chat call per query — auto-skipped when the pool already fits in <code>k</code></td><td>query</td></tr>
+      <tr><td>Answer</td><td>1 chat call</td><td>query</td></tr>
+    </table>
+    </div>
+    <p>Contextualization dominates, and four knobs control it:</p>
+    <p>
+      <strong><code>CONTEXT_CONCURRENCY</code> — the cache-vs-clock trade.</strong>
+      After the priming call, this many workers fan out. On multi-page documents the
+      default <code>4</code> wins on wall-clock and the cache holds (measured: 82% of
+      prompt tokens cached in steady state). On <em>short</em> documents — a handful of
+      quick calls — the burst can outrun the provider's few-second cache-settling
+      window; set <code>1</code> to give each entry time to land. Check
+      <code>cached_tokens</code> in the report; it will tell you which regime you're in.
+    </p>
+    <p>
+      <strong>A cheap blurb model.</strong> Blurbs are a summarization chore, not
+      reasoning — they don't need your best model. Route them per call:
+      <code>rag.ingest_markdown(text, doc_id="doc.md", context_model="gpt-5.4-mini")</code>.
+    </p>
+    <p>
+      <strong><code>CONTEXT_DOC_CAP</code> — match it to your chat model.</strong>
+      Keep it ≈20k tokens under the model's usable input (250k fits the GPT-5 family;
+      ~100k for a 128k-context model). Too high and you get hard API errors
+      mid-ingestion; too low merely routes more documents into excerpt mode — a soft,
+      safe failure.
+    </p>
+    <p>
+      <strong>Rerank mode — precision vs. latency.</strong> The <code>llm</code>
+      rerank buys the largest precision jump in the benchmark (Pass@1 66.7% → 91.7%)
+      for one chat call of latency per query. Latency-critical paths can set
+      <code>rerank="off"</code> (contextual hybrid alone still hits 91.7% Pass@5);
+      high-throughput ones can point <code>endpoint</code> mode at a hosted
+      cross-encoder.
+    </p>
+    <div class="callout">
+      <div class="co-title">Rule of thumb</div>
+      <p>
+        Ingestion is capital, queries are operating expense. Spend at ingestion —
+        blurbs, good parsing — precisely because it's one-time and cached; keep the
+        per-query path to three cheap calls (embed, rerank, answer) plus two free
+        local scans.
+      </p>
+    </div>
+  </section>
+
+  <section id="extend" class="measure">
+    <h2><span class="sn">09</span>Testing &amp; extending</h2>
+    <p>
+      The test suite runs entirely offline — the LLM and embeddings are faked at the
+      <code>llm.py</code> seam, so the whole suite runs in seconds with no keys and no
+      network. <code>examples/offline_demo.py</code> uses the same trick to run the full
+      pipeline end to end without a key — a demo that doubles as a smoke test:
+</p>
+    <pre><code>pip install -e <span class="c-str">".[dev]"</span>
+pytest        <span class="c-cm"># offline — a few seconds</span>
+ruff check .  <span class="c-cm"># lint-clean under E, W, F, I, B, UP, SIM</span></code></pre>
+    <p>
+      The suite pins down the failure modes that were found the hard way — reranker
+      resilience to garbled indices, collection-name collisions, page-provenance
+      honesty for single-blob parsers — so they stay fixed.
+    </p>
+    <p>Extending follows the seams from <a href="#philosophy">§1</a>:</p>
+    <p>
+      <strong>New provider</strong> — usually zero code: set
+      <code>OPENAI_BASE_URL</code> to any OpenAI-compatible gateway. Beyond that,
+      <code>llm.py</code> is the only file to touch.
+      <strong>New retriever</strong> — produce a ranked list and join the fusion in
+      <code>search.py</code>; downstream stages are contract-blind to where rankings
+      come from.
+      <strong>New parser</strong> — return a <code>ParsedDoc</code> (per-page Markdown)
+      and every ingestion path works, including provenance.
+      <strong>New vector store</strong> — implement the small <code>VectorStore</code>
+      surface if you outgrow embedded Chroma.
+    </p>
+  </section>
+
+  <section id="benchmark" class="measure">
+    <h2><span class="sn">10</span>Reproduce the numbers</h2>
+    <p>
+      The measured results quoted throughout (and analyzed in depth in
+      <a href="course.html#proof">the course, §10</a>) come from one script:
+    </p>
+    <pre><code>export OPENAI_API_KEY=sk-...
+python examples/benchmark.py              <span class="c-cm"># ~4 minutes, well under $1</span>
+python examples/benchmark.py --no-rerank  <span class="c-cm"># skip the slowest condition</span></code></pre>
+    <p>
+      It builds the 12-document synthetic corpus, ingests it twice (with and without
+      blurbs), runs 36 queries through five retrieval configurations, and prints the
+      Pass@k table, cache statistics, and a qualitative side-by-side answer. No
+      dependencies beyond the package itself.
+    </p>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Configuration</th><th class="num">Pass@1</th><th class="num">Pass@5</th></tr>
+      <tr><td>Plain chunks — hybrid</td><td class="num">0.0%</td><td class="num">2.8%</td></tr>
+      <tr><td>Contextual — hybrid</td><td class="num">66.7%</td><td class="num">91.7%</td></tr>
+      <tr class="hl"><td>Contextual — hybrid + LLM rerank</td><td class="num">91.7%</td><td class="num">97.2%</td></tr>
+    </table>
+    </div>
+    <p>
+      The benchmark isn't decorative — two of its findings landed as code (rerankers
+      ranking contextual text; cache-settling guidance for short documents). Keep it
+      that way: if you change the pipeline, re-run it, and let the numbers veto you.
+    </p>
+    <footer class="end">
+      <p>
+        New to the technique itself? Start with
+        <a href="course.html">Part 1 — the course</a>. Sources: Anthropic's
+        <a href="https://www.anthropic.com/news/contextual-retrieval">Contextual Retrieval post</a>
+        and <a href="https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide">official cookbook</a>.
+        Independent implementation; not affiliated with Anthropic.
+      </p>
+    </footer>
+  </section>
+</main>
+
+<script>
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+    var current = null;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          if (current) current.classList.remove('active');
+          current = byId[e.target.id];
+          if (current) current.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -70% 0px' });
+    document.querySelectorAll('main section[id]').forEach(function (s) { observer.observe(s); });
+  })();
+</script>

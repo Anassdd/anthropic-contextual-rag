@@ -168,3 +168,22 @@ def test_oversized_atomic_block_never_split():
     cc = [c for c in ch2 if "compute_value" in c.text]
     assert len(cc) == 1, f"code block split across {len(cc)} chunks"
     assert cc[0].text.count("```") == 2, "code fence broken"
+
+
+def test_oversized_pipe_table_never_torn():
+    """Regression: Markdown pipe tables must be atomic like HTML tables — the
+    vision parser emits tables in pipe form, and sentence-splitting an
+    oversized one tears rows apart mid-table."""
+    rows = "\n".join(f"| item {i} | measured value {i}. Includes notes. | {i * 3} |"
+                     for i in range(80))
+    md = ("Intro prose before the table.\n\n"
+          "| name | description | qty |\n| --- | --- | --- |\n" + rows +
+          "\n\nClosing prose after the table.")
+    chunks = chunk_markdown(md, doc_id="t", target_tokens=100, count_tokens=WC)
+    tc = [c for c in chunks if "| name |" in c.text]
+    assert len(tc) == 1, "table header separated from its rows"
+    assert "item 0" in tc[0].text and "item 79" in tc[0].text, \
+        f"table torn across chunks: {[c.index for c in chunks if 'item ' in c.text]}"
+    for line in tc[0].text.splitlines():
+        if "item" in line:
+            assert line.rstrip().endswith("|"), f"row cut mid-cell: {line!r}"

@@ -6,13 +6,14 @@ whole pipeline at a compatible gateway instead (an Azure-hosted proxy, LiteLLM,
 vLLM, a corporate gateway...). Switching endpoints is a config change, never a
 code change.
 
-Settings load **lazily** on first use, so importing the package never requires a
-key — only actually calling an LLM does. Three ways to configure, in order of
-precedence:
+Settings load **lazily** on first use, so importing the package has no side
+effects and never requires a key — only actually calling an LLM does. Three
+ways to configure, in order of precedence:
 
 1. ``configure(...)`` from code (highest — overrides everything),
 2. real environment variables,
-3. a ``.env`` file in the working directory (lowest — never overrides real env).
+3. a ``.env`` file in the working directory (lowest — never overrides real
+   env; read on first settings load, not at import).
 
 Example:
     >>> from contextual_rag import configure, get_settings
@@ -28,12 +29,13 @@ from dataclasses import dataclass, replace
 
 from dotenv import load_dotenv
 
-# Picks up a ./.env in the consumer's project if present; real env vars win.
-load_dotenv()
-
 
 class ConfigError(RuntimeError):
-    """Raised when required configuration is missing or inconsistent."""
+    """Raised when required configuration is missing or invalid."""
+
+
+_RERANK_MODES = ("llm", "endpoint", "off")
+_PARSERS = ("vision", "docintel")
 
 
 @dataclass(frozen=True)
@@ -97,31 +99,67 @@ class Settings:
 
     chat_temperature: float = 0.2
 
+    def __post_init__(self) -> None:
+        # Normalize the two enum-like fields, then validate them. A typo like
+        # RETRIEVAL_RERANK=none must fail loudly HERE: downstream it would
+        # silently select the LLM reranker — surprise cost on every query.
+        object.__setattr__(self, "parser", self.parser.strip().lower())
+        object.__setattr__(self, "retrieval_rerank", self.retrieval_rerank.strip().lower())
+        if self.retrieval_rerank not in _RERANK_MODES:
+            raise ConfigError(
+                f"retrieval_rerank must be one of {_RERANK_MODES}, "
+                f"got {self.retrieval_rerank!r}")
+        if self.parser not in _PARSERS:
+            raise ConfigError(f"parser must be one of {_PARSERS}, got {self.parser!r}")
+
+
+def _env_int(name: str, default: int) -> int:
+    """Read an integer env var; empty/unset → default, malformed → a clear error."""
+    raw = (os.getenv(name) or "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        raise ConfigError(f"{name} must be an integer, got {raw!r}") from None
+
+
+def _env_float(name: str, default: float) -> float:
+    """Read a float env var; empty/unset → default, malformed → a clear error."""
+    raw = (os.getenv(name) or "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        raise ConfigError(f"{name} must be a number, got {raw!r}") from None
+
 
 def _from_env() -> Settings:
     """Build a :class:`Settings` from the environment, defaulting field by field."""
+    # Picks up a ./.env in the consumer's project if present; real environment
+    # variables always win (load_dotenv never overrides them). Called here —
+    # not at import — so importing the package has no side effects.
+    load_dotenv()
     d = Settings()  # source of default values — never duplicated here
     return Settings(
         api_key=os.getenv("OPENAI_API_KEY", ""),
         base_url=os.getenv("OPENAI_BASE_URL", ""),
-        chat_model=os.getenv("CHAT_MODEL", d.chat_model),
-        embed_model=os.getenv("EMBED_MODEL", d.embed_model),
+        chat_model=os.getenv("CHAT_MODEL") or d.chat_model,
+        embed_model=os.getenv("EMBED_MODEL") or d.embed_model,
         parse_model=os.getenv("PARSE_MODEL", ""),
-        parser=os.getenv("PARSER", d.parser).strip().lower(),
+        parser=os.getenv("PARSER") or d.parser,
         docintel_endpoint=os.getenv("DOCINTEL_ENDPOINT", ""),
         docintel_key=os.getenv("DOCINTEL_KEY", ""),
         vector_dir=os.getenv("VECTOR_DIR", ""),
         rerank_model=os.getenv("RERANK_MODEL", ""),
         rerank_base_url=os.getenv("RERANK_BASE_URL", ""),
         rerank_api_key=os.getenv("RERANK_API_KEY", ""),
-        retrieval_rerank=(os.getenv("RETRIEVAL_RERANK", "").strip().lower()
-                          or d.retrieval_rerank),
-        context_doc_cap=int(os.getenv("CONTEXT_DOC_CAP", str(d.context_doc_cap))),
-        context_part_tokens=int(os.getenv("CONTEXT_PART_TOKENS",
-                                          str(d.context_part_tokens))),
-        context_concurrency=int(os.getenv("CONTEXT_CONCURRENCY",
-                                          str(d.context_concurrency))),
-        chat_temperature=float(os.getenv("CHAT_TEMPERATURE", str(d.chat_temperature))),
+        retrieval_rerank=os.getenv("RETRIEVAL_RERANK") or d.retrieval_rerank,
+        context_doc_cap=_env_int("CONTEXT_DOC_CAP", d.context_doc_cap),
+        context_part_tokens=_env_int("CONTEXT_PART_TOKENS", d.context_part_tokens),
+        context_concurrency=_env_int("CONTEXT_CONCURRENCY", d.context_concurrency),
+        chat_temperature=_env_float("CHAT_TEMPERATURE", d.chat_temperature),
     )
 
 

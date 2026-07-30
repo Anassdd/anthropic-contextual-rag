@@ -8,9 +8,9 @@ The cutting strategy, in order of preference:
 3. **Sentences** — an oversized paragraph is split at sentence boundaries.
 4. **Hard character cuts** — only for a single sentence larger than the target.
 
-Three kinds of blocks are **atomic** and never split, even when oversized:
-fenced code, display math (``$$…$$``), and HTML tables — a half-formula or a
-torn table row is worse than an oversized chunk. A small sentence-snapped
+Four kinds of blocks are **atomic** and never split, even when oversized:
+fenced code, display math (``$$…$$``), Markdown pipe tables, and HTML tables —
+a half-formula or a torn table row is worse than an oversized chunk. A small sentence-snapped
 overlap is prepended to each chunk (skipped across atomic blocks) so a sentence
 straddling a boundary survives in at least one piece.
 
@@ -35,6 +35,7 @@ _HEADING = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 _FENCE = re.compile(r"^\s*(```|~~~)")
 _HTML_TABLE_OPEN = re.compile(r"^\s*<table", re.I)
 _HTML_TABLE_CLOSE = re.compile(r"</table>", re.I)
+_PIPE_ROW = re.compile(r"^\s*\|")
 _SENTENCE = re.compile(r"(?<=[.!?])\s+")
 
 
@@ -123,13 +124,26 @@ def _blocks(markdown: str) -> list[_Block]:
                                  s + sum(len(x) for x in buf), atomic=True))
             continue
 
-        # Paragraph / list / Markdown table: run until a blank line or a new structure.
+        # Markdown pipe table: consecutive |-prefixed rows, consumed whole.
+        # Atomic for the same reason as HTML tables — sentence-splitting would
+        # tear rows apart (and the vision parser emits tables in this form).
+        if _PIPE_ROW.match(line):
+            buf, s, i = [line], start, i + 1
+            while i < n and _PIPE_ROW.match(lines[i][1]):
+                buf.append(lines[i][1])
+                i += 1
+            blocks.append(_Block("content", "".join(buf).strip("\n"), s,
+                                 s + sum(len(x) for x in buf), atomic=True))
+            continue
+
+        # Paragraph / list: run until a blank line or a new structure.
         buf, s, i = [line], start, i + 1
         while i < n:
             _, l2 = lines[i]
             t = l2.strip()
             if t == "" or _HEADING.match(l2.rstrip("\n")) or _FENCE.match(l2) \
-                    or t.startswith("$$") or _HTML_TABLE_OPEN.match(l2):
+                    or t.startswith("$$") or _HTML_TABLE_OPEN.match(l2) \
+                    or _PIPE_ROW.match(l2):
                 break
             buf.append(l2)
             i += 1
@@ -282,7 +296,7 @@ def chunk_markdown(
         doc_id: Identifier stamped on every chunk (usually the filename).
         domain_id: Collection the chunks will belong to.
         target_tokens: Soft size target per chunk. Only atomic blocks
-            (code / display math / HTML tables) may exceed it.
+            (code / display math / tables) may exceed it.
         overlap_tokens: Sentence-snapped overlap carried from the previous
             chunk (0 disables; skipped across atomic blocks).
         min_tokens: A final chunk smaller than this is folded into its

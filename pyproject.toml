@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anthropic-contextual-rag"
-version = "0.2.0"
+version = "0.3.0"
 description = "Anthropic-style Contextual Retrieval as a reusable RAG package: chunk → LLM-situate → embed + BM25 → RRF → rerank → grounded, source-cited answers. Works with any OpenAI-compatible endpoint."
 readme = "README.md"
 requires-python = ">=3.10"

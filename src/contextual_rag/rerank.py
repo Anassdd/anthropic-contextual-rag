@@ -47,8 +47,16 @@ def rerank(query: str, chunks: list[ScoredChunk], *, mode: str = "llm",
         top_k: Truncate the result (None = keep all).
 
     Returns:
-        The reordered chunks; each ranked chunk gains ``scores["rerank"]``.
+        The reordered chunks; each ranked chunk gains ``scores["rerank"]``
+        (the cross-encoder's relevance score in ``endpoint`` mode, reciprocal
+        rank in ``llm`` mode).
+
+    Raises:
+        ValueError: If ``mode`` is not one of the three known modes — a typo
+            must not silently select a mode that spends money.
     """
+    if mode not in ("off", "llm", "endpoint"):
+        raise ValueError(f"unknown rerank mode {mode!r} — expected 'off', 'llm' or 'endpoint'")
     if mode == "off" or len(chunks) <= 1:
         return chunks[:top_k] if top_k else chunks
     if mode == "endpoint" and endpoint_configured():
@@ -63,14 +71,16 @@ def _apply_order(chunks: list[ScoredChunk], order: list[int]) -> list[ScoredChun
 
     Out-of-range and duplicate indices are dropped; candidates the reranker
     omitted keep their original relative order at the tail. Ranked chunks get
-    ``scores["rerank"]`` = reciprocal rank."""
+    ``scores["rerank"]`` = reciprocal rank — unless the caller already stamped
+    a native score (``_endpoint_rerank`` stamps the cross-encoder's relevance
+    score, which must survive)."""
     seen: set[int] = set()
     ranked: list[ScoredChunk] = []
     for idx in order:
         if 0 <= idx < len(chunks) and idx not in seen:
             seen.add(idx)
             c = chunks[idx]
-            c.scores["rerank"] = round(1.0 / (len(ranked) + 1), 4)
+            c.scores.setdefault("rerank", round(1.0 / (len(ranked) + 1), 4))
             ranked.append(c)
     for i, c in enumerate(chunks):
         if i not in seen:

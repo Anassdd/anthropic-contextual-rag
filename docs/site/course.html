@@ -1,0 +1,741 @@
+<title>Contextual Retrieval — A Course</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #FAF9F5;
+    --panel: #F0EEE6;
+    --panel-deep: #E8E5DA;
+    --ink: #191919;
+    --slate: #5E5D59;
+    --faint: #8A8781;
+    --accent: #C15F3C;
+    --accent-soft: #E8CDBF;
+    --good: #4E7A5A;
+    --line: #DDD9CC;
+    --code-bg: #F0EEE6;
+    --serif: "Charter", "Iowan Old Style", "Georgia", "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1F1D18;
+      --panel: #282520;
+      --panel-deep: #2F2C25;
+      --ink: #F0EEE6;
+      --slate: #B3AFA4;
+      --faint: #8A8781;
+      --accent: #D97757;
+      --accent-soft: #5A3B2C;
+      --good: #86B294;
+      --line: #3A362D;
+      --code-bg: #282520;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #FAF9F5; --panel: #F0EEE6; --panel-deep: #E8E5DA; --ink: #191919;
+    --slate: #5E5D59; --faint: #8A8781; --accent: #C15F3C; --accent-soft: #E8CDBF;
+    --good: #4E7A5A; --line: #DDD9CC; --code-bg: #F0EEE6;
+  }
+  :root[data-theme="dark"] {
+    --bg: #1F1D18; --panel: #282520; --panel-deep: #2F2C25; --ink: #F0EEE6;
+    --slate: #B3AFA4; --faint: #8A8781; --accent: #D97757; --accent-soft: #5A3B2C;
+    --good: #86B294; --line: #3A362D; --code-bg: #282520;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 1.0525rem;
+    line-height: 1.68;
+  }
+
+  /* ---- Sidebar ---- */
+  .rail {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 264px;
+    padding: 2.2rem 1.6rem 2rem;
+    border-right: 1px solid var(--line);
+    background: var(--bg);
+    overflow-y: auto;
+  }
+  .rail .wordmark {
+    font-family: var(--serif);
+    font-size: 1.22rem;
+    line-height: 1.25;
+    margin: 0 0 .25rem;
+  }
+  .rail .wordmark em { font-style: italic; color: var(--accent); }
+  .rail .kicker {
+    font-size: .68rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0 0 1.8rem;
+  }
+  .rail nav { display: flex; flex-direction: column; gap: .12rem; }
+  .rail a {
+    display: flex;
+    gap: .6rem;
+    align-items: baseline;
+    padding: .34rem .55rem;
+    border-radius: 4px;
+    color: var(--slate);
+    text-decoration: none;
+    font-size: .855rem;
+    line-height: 1.35;
+    border-left: 2px solid transparent;
+  }
+  .rail a .n {
+    font-family: var(--mono);
+    font-size: .68rem;
+    color: var(--faint);
+    min-width: 1.35em;
+    font-variant-numeric: tabular-nums;
+  }
+  .rail a:hover { color: var(--ink); background: var(--panel); }
+  .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .rail a.active { color: var(--accent); border-left-color: var(--accent); background: var(--panel); }
+  .rail a.active .n { color: var(--accent); }
+  .rail .rail-foot {
+    margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+    font-size: .78rem; color: var(--faint); line-height: 1.6;
+  }
+  .rail .rail-foot a { display: inline; padding: 0; border: 0; color: var(--accent); font-size: inherit; }
+  .rail .rail-foot a:hover { background: none; text-decoration: underline; }
+
+  /* ---- Main column ---- */
+  main { margin-left: 264px; padding: 0 3.2rem 6rem; }
+  .measure { max-width: 68ch; }
+
+  header.hero { padding: 5.2rem 0 3rem; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 1.1rem; font-weight: 600;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(2.1rem, 4.5vw, 3.15rem);
+    line-height: 1.12;
+    margin: 0 0 1.2rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede { font-size: 1.16rem; color: var(--slate); line-height: 1.6; margin: 0; }
+
+  section { padding-top: 3.6rem; }
+  section + section { margin-top: 1.2rem; }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 1.72rem;
+    line-height: 1.22;
+    margin: 0 0 .4rem;
+    text-wrap: balance;
+    letter-spacing: -0.008em;
+  }
+  h2 .sn {
+    font-family: var(--mono);
+    font-size: .78rem;
+    color: var(--accent);
+    display: block;
+    margin-bottom: .55rem;
+    letter-spacing: .08em;
+  }
+  h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 1.22rem;
+    margin: 2.1rem 0 .3rem;
+  }
+  p { margin: .85rem 0; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  strong { font-weight: 600; }
+
+  blockquote.chunk {
+    margin: 1.4rem 0;
+    padding: 1rem 1.3rem;
+    background: var(--panel);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    font-family: var(--serif);
+    font-size: 1.08rem;
+    font-style: italic;
+    color: var(--ink);
+  }
+  blockquote.chunk .who {
+    display: block; margin-top: .55rem;
+    font-family: var(--sans); font-style: normal; font-size: .76rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--faint);
+  }
+
+  .blurb-demo {
+    margin: 1.4rem 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+  }
+  .blurb-demo .blurb {
+    padding: .85rem 1.3rem; background: var(--accent-soft);
+    font-family: var(--serif); font-style: italic; font-size: .98rem; line-height: 1.55;
+  }
+  .blurb-demo .blurb .tag, .blurb-demo .orig .tag {
+    display: block; font-family: var(--sans); font-style: normal; font-size: .68rem;
+    letter-spacing: .12em; text-transform: uppercase; margin-bottom: .35rem; color: var(--accent);
+    font-weight: 600;
+  }
+  .blurb-demo .orig { padding: .85rem 1.3rem; background: var(--panel); }
+  .blurb-demo .orig .tag { color: var(--faint); }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: .84rem;
+    line-height: 1.6;
+    margin: 1.3rem 0;
+  }
+  code { font-family: var(--mono); font-size: .875em; background: var(--panel); padding: .1em .38em; border-radius: 4px; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .c-cm { color: var(--faint); }
+  .c-kw { color: var(--accent); }
+  .c-str { color: var(--good); }
+
+  table { border-collapse: collapse; width: 100%; margin: 1.4rem 0; font-size: .92rem; }
+  th {
+    text-align: left; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--faint); font-weight: 600; padding: .5rem .8rem;
+    border-bottom: 1.5px solid var(--ink);
+  }
+  td { padding: .55rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: .85rem; }
+  tr.hl td { background: var(--panel); font-weight: 600; }
+  .yes { color: var(--good); font-weight: 700; }
+  .table-scroll { overflow-x: auto; }
+
+  /* Pipeline diagram */
+  .pipe { margin: 1.6rem 0; }
+  .pipe .lane-label {
+    font-size: .68rem; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--faint); margin: 1.1rem 0 .5rem; font-weight: 600;
+  }
+  .pipe .lane { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+  .pipe .node {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: .42rem .8rem; font-family: var(--mono); font-size: .78rem; white-space: nowrap;
+  }
+  .pipe .node.hot { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+  .pipe .arrow { color: var(--faint); font-size: .8rem; }
+
+  .callout {
+    margin: 1.6rem 0; padding: 1.1rem 1.3rem;
+    background: var(--panel); border-radius: 8px; border: 1px solid var(--line);
+    font-size: .95rem;
+  }
+  .callout .co-title {
+    font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700; margin-bottom: .35rem;
+  }
+  .callout p { margin: .4rem 0; }
+
+  .qa { display: grid; gap: 1rem; margin: 1.5rem 0; }
+  .qa .card { border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.25rem; background: var(--panel); }
+  .qa .card.win { border-color: var(--good); }
+  .qa .who {
+    font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;
+    font-weight: 700; color: var(--faint); margin-bottom: .4rem;
+  }
+  .qa .card.win .who { color: var(--good); }
+  .qa p { margin: 0; font-family: var(--serif); font-size: 1rem; font-style: italic; }
+
+  footer.end {
+    margin-top: 5rem; padding-top: 2rem; border-top: 1px solid var(--line);
+    color: var(--slate); font-size: .92rem;
+  }
+
+  @media (max-width: 900px) {
+    .rail { position: static; width: auto; border-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 1.4rem; }
+    .rail nav { flex-direction: row; flex-wrap: wrap; gap: .3rem; }
+    .rail a { border-left: 0; border: 1px solid var(--line); }
+    .rail a.active { border-color: var(--accent); }
+    main { margin-left: 0; padding: 0 1.4rem 4rem; }
+    header.hero { padding-top: 2.4rem; }
+  }
+</style>
+
+<aside class="rail">
+  <p class="wordmark">Contextual <em>Retrieval</em></p>
+  <p class="kicker">A short course</p>
+  <nav id="toc">
+    <a href="#problem"><span class="n">01</span> Why chunks fail</a>
+    <a href="#retrieval"><span class="n">02</span> Retrieval, in one page</a>
+    <a href="#idea"><span class="n">03</span> The idea</a>
+    <a href="#indexed"><span class="n">04</span> Indexed vs. cited</a>
+    <a href="#caching"><span class="n">05</span> Paying for it: caching</a>
+    <a href="#excerpt"><span class="n">06</span> Documents too big to fit</a>
+    <a href="#hybrid"><span class="n">07</span> Hybrid search &amp; fusion</a>
+    <a href="#rerank"><span class="n">08</span> Reranking</a>
+    <a href="#grounded"><span class="n">09</span> Grounded answers</a>
+    <a href="#proof"><span class="n">10</span> The proof</a>
+    <a href="#limits"><span class="n">11</span> Limits &amp; when to use it</a>
+  </nav>
+  <div class="rail-foot">
+    Based on Anthropic's <a href="https://www.anthropic.com/news/contextual-retrieval">Contextual Retrieval</a> post
+    and <a href="https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide">cookbook</a>.<br>
+    Part 2: <a href="architecture.html">the package, inside&nbsp;out</a>.
+  </div>
+</aside>
+
+<main>
+  <header class="hero">
+    <div class="measure">
+      <p class="eyebrow">Course · Retrieval-augmented generation</p>
+      <h1>Every chunk deserves to remember <em>where it came from</em></h1>
+      <p class="lede">
+        Contextual Retrieval is a deceptively simple technique published by Anthropic:
+        before you index a chunk, have an LLM write one sentence saying where the chunk
+        sits in its document — then index the sentence with the chunk. This course walks
+        through why that works, what it costs, and the measured difference it makes,
+        using a real implementation you can run.
+      </p>
+    </div>
+  </header>
+
+  <section id="problem" class="measure">
+    <h2><span class="sn">01</span>Why chunks fail</h2>
+    <p>
+      Every RAG pipeline begins with an act of violence: it takes a coherent document
+      and cuts it into chunks small enough to embed and retrieve. The cut is necessary —
+      you can't stuff whole filings into every prompt — but something real is lost.
+      Look at a typical chunk from a quarterly report:
+    </p>
+    <blockquote class="chunk">
+      “Revenue grew 14% year over year, reaching $595 million for the quarter,
+      driven by continued strength in subscription renewals.”
+      <span class="who">Chunk 7 of 10 · some document</span>
+    </blockquote>
+    <p>
+      <strong>Whose</strong> revenue? <strong>Which</strong> quarter? The document knew —
+      the title said <em>Borealis Industries, Q2 2025</em> — but the chunk doesn't.
+      The company name lives three pages away, in a heading that landed in a different chunk.
+    </p>
+    <p>
+      This isn't a corner case. It is the <em>normal condition</em> of financial filings,
+      contracts, medical records, and papers: documents state their identity once, at the
+      top, and then spend fifty pages saying “the Company”, “the quarter”, “the patient”.
+      Almost every chunk in the body is an orphan.
+    </p>
+    <p>
+      Now imagine a user asks: <em>“How much did Borealis Industries' revenue grow in
+      Q2 2025?”</em> The chunk above is the answer. But the systems doing the searching
+      only see the chunk <em>as written</em> — and as written, it matches “Borealis”
+      and “Q2 2025” not at all. If your corpus holds twelve near-identical quarterly
+      reports, there are twelve interchangeable revenue chunks, and the retriever is
+      reduced to guessing. Measured on exactly this corpus shape
+      (<a href="#proof">§10</a>), a standard pipeline finds the right chunk in its top-5
+      less than <strong>3% of the time</strong>. It doesn't degrade. It collapses.
+    </p>
+  </section>
+
+  <section id="retrieval" class="measure">
+    <h2><span class="sn">02</span>Retrieval, in one page</h2>
+    <p>
+      To see why the fix works, you need thirty seconds on how the two standard
+      retrievers actually think.
+    </p>
+    <h3>Dense retrieval — search by meaning</h3>
+    <p>
+      An <strong>embedding model</strong> turns text into a vector — a point in a
+      high-dimensional space arranged so that texts with similar <em>meaning</em> land
+      near each other. Index every chunk's vector; at query time, embed the question and
+      take the nearest chunks by cosine similarity. Dense retrieval is superb at
+      paraphrase (“How fast did sales climb?” finds “revenue grew”) and even works
+      across languages. Its weakness: it's blurry on <em>exact</em> things —
+      identifiers, error codes, names. And critically, it can only embed
+      <strong>what's in the text</strong>. If the chunk never says “Borealis”,
+      no geometry will put it near Borealis questions.
+    </p>
+    <h3>BM25 — search by exact words</h3>
+    <p>
+      <strong>BM25</strong> is the classic keyword scorer (the heart of every serious
+      search engine since the '90s). It rewards chunks that contain the query's rare
+      terms — the rarer the term corpus-wide, the bigger the reward, with diminishing
+      returns for repetition and a penalty for long chunks. It's exact where embeddings
+      are blurry: perfect for “error TS-1129” or an accented product name. Its weakness
+      is the mirror image: it's blind to synonyms — and, again, it can only match
+      <strong>words that are actually in the chunk</strong>.
+    </p>
+    <div class="callout">
+      <div class="co-title">The shared blind spot</div>
+      <p>
+        Dense and BM25 fail differently on almost everything — which is why hybrids of
+        the two work so well (<a href="#hybrid">§7</a>). But they share exactly one blind
+        spot: <strong>neither can retrieve on information the chunk doesn't contain.</strong>
+        An orphaned chunk is invisible to both. That shared blind spot is the entire
+        target of Contextual Retrieval.
+      </p>
+    </div>
+  </section>
+
+  <section id="idea" class="measure">
+    <h2><span class="sn">03</span>The idea: give every chunk a memory</h2>
+    <p>
+      The fix is almost embarrassingly direct. At ingestion time — once per chunk,
+      before anything is indexed — show an LLM the <em>whole document</em> and the
+      chunk, and ask it to write a one-to-two-sentence blurb situating the chunk
+      within the document:
+    </p>
+    <pre><code>&lt;document&gt;
+{THE WHOLE DOCUMENT}
+&lt;/document&gt;
+
+Here is the chunk we want to situate within the whole document:
+&lt;chunk&gt;{THE CHUNK}&lt;/chunk&gt;
+
+Please give a short succinct context to situate this chunk within
+the overall document for the purposes of improving search retrieval
+of the chunk. Answer only with the succinct context and nothing else.</code></pre>
+    <p>
+      That is Anthropic's published prompt, verbatim. For our orphaned revenue chunk,
+      the model — which <em>has</em> read the title page — writes something like:
+    </p>
+    <div class="blurb-demo">
+      <div class="blurb">
+        <span class="tag">Generated blurb — prepended for indexing</span>
+        This chunk is from Borealis Industries' Q2 2025 quarterly report, in the
+        Revenue section covering year-over-year growth.
+      </div>
+      <div class="orig">
+        <span class="tag">Original chunk — unchanged</span>
+        Revenue grew 14% year over year, reaching $595 million for the quarter,
+        driven by continued strength in subscription renewals.
+      </div>
+    </div>
+    <p>
+      The blurb restores exactly what the cut destroyed: the company, the period, the
+      section. Prepend it to the chunk and suddenly <em>both</em> retrievers can see it —
+      the embedding of <code>blurb + chunk</code> lands near Borealis-Q2 questions, and
+      BM25 finds “Borealis” as a literal token. One LLM call repaired the shared
+      blind spot from §2.
+    </p>
+    <p>
+      Notice what the technique is <em>not</em>. It's not a smarter chunker — the chunks
+      are unchanged. It's not a bigger context window — the answer model sees the same
+      chunks it always did. It's a <strong>metadata enrichment at indexing time</strong>,
+      done by the one component in the stack that has actually read the whole document.
+    </p>
+  </section>
+
+  <section id="indexed" class="measure">
+    <h2><span class="sn">04</span>What gets indexed vs. what gets cited</h2>
+    <p>
+      The single most important design rule — the one that keeps the technique honest —
+      is that the blurb exists <strong>for finding, not for reading</strong>. It's
+      indexed, never cited. One decision, stated once, and every stage inherits it:
+    </p>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Stage</th><th>Sees blurb + chunk</th><th>Sees original chunk only</th></tr>
+      <tr><td>Embedding</td><td class="yes">✓</td><td></td></tr>
+      <tr><td>BM25 index</td><td class="yes">✓</td><td></td></tr>
+      <tr><td>Reranker</td><td class="yes">✓</td><td></td></tr>
+      <tr><td>Answer generation</td><td></td><td class="yes">✓</td></tr>
+      <tr><td>Citations shown to the user</td><td></td><td class="yes">✓</td></tr>
+    </table>
+    </div>
+    <p>
+      Why so strict? Because the blurb is <em>generated text</em>. It's usually right,
+      but it is a model's paraphrase, not the source. Letting it leak into answers or
+      citations would mean quoting the model to the user while claiming to quote the
+      document. Keeping it index-only gives you the findability without ever polluting
+      provenance: every citation still resolves to real bytes of the real document.
+    </p>
+    <p>
+      The one non-obvious row is the <strong>reranker</strong> — it sees the blurb too,
+      and this was learned the hard way (<a href="#rerank">§8</a>).
+    </p>
+  </section>
+
+  <section id="caching" class="measure">
+    <h2><span class="sn">05</span>Paying for it: prompt caching</h2>
+    <p>
+      The obvious objection: <em>one LLM call per chunk, each carrying the entire
+      document?</em> A 100-page document with 200 chunks means sending those 100 pages
+      two hundred times. Naïvely, that's ruinous.
+    </p>
+    <p>
+      The rescue is <strong>prompt-prefix caching</strong>, and it's why the prompt in
+      §3 puts the document <em>first</em>. Modern LLM providers cache the computation
+      for a request's opening tokens: if two requests begin with byte-identical text,
+      the second one gets that prefix served from cache at roughly a tenth of the price.
+      Since every chunk of a document shares the same <code>&lt;document&gt;…&lt;/document&gt;</code>
+      opening, the document is paid for in full exactly <em>once</em> — every subsequent
+      chunk pays cached rates for it and full price only for its own small tail.
+    </p>
+    <div class="pipe" aria-label="Cache diagram">
+      <div class="lane-label">Call 1 — writes the cache</div>
+      <div class="lane">
+        <span class="node hot">document (full price)</span>
+        <span class="arrow">+</span>
+        <span class="node">chunk 1 + instructions</span>
+      </div>
+      <div class="lane-label">Calls 2…N — read the cache</div>
+      <div class="lane">
+        <span class="node">document (~10% price, cached)</span>
+        <span class="arrow">+</span>
+        <span class="node">chunk k + instructions</span>
+      </div>
+    </div>
+    <p>
+      Document-first ordering isn't cosmetic; it <em>is</em> the economics. Measured on
+      the implementation this course accompanies: <strong>82% of prompt tokens served
+      from cache</strong> in steady state. Two operational details worth knowing:
+    </p>
+    <p>
+      <strong>Prime before you parallelize.</strong> The cache entry doesn't exist until
+      the first call writes it. Fan out all chunks at once and every worker pays full
+      price for the prefix simultaneously. The right shape: run the first chunk of each
+      document <em>alone</em>, then fan out.
+    </p>
+    <p>
+      <strong>Verify, don't assume.</strong> Providers return a <code>cached_tokens</code>
+      count per call. Surface it in your ingestion reports — a caching regression should
+      be a number you notice, not a bill you discover.
+    </p>
+  </section>
+
+  <section id="excerpt" class="measure">
+    <h2><span class="sn">06</span>When the document doesn't fit</h2>
+    <p>
+      The published recipe assumes the whole document fits in the model's input window.
+      A 500k-token filing doesn't. And well before hard limits, blurb quality quietly
+      degrades as irrelevant bulk grows — the “context rot” problem. So oversized
+      documents need a fallback, and it should degrade <em>gracefully</em>, not
+      truncate blindly.
+    </p>
+    <p>
+      The implementation's answer is <strong>excerpt mode</strong>. Instead of the whole
+      document, each chunk's prompt carries a purpose-built excerpt:
+    </p>
+    <pre><code>excerpt = document HEAD   <span class="c-cm"># ~6k tokens: title, TOC, intro — the document's identity</span>
+        + "[…]"
+        + REGION around the chunk   <span class="c-cm"># ± ~4k-token margins of local context</span></code></pre>
+    <p>
+      The head keeps what §1 showed matters most — the document's <em>identity</em>
+      (who, what period, what kind of document) — while the region supplies local
+      context. And to keep §5's economics alive, consecutive chunks are batched so that
+      each batch shares one byte-identical excerpt: prefix caching keeps working
+      <em>per batch</em> exactly as it worked per document. The prompt honestly says
+      <code>&lt;document_excerpt&gt;</code> rather than pretending the model saw everything.
+    </p>
+  </section>
+
+  <section id="hybrid" class="measure">
+    <h2><span class="sn">07</span>Hybrid search &amp; rank fusion</h2>
+    <p>
+      With contextual text indexed on both sides, run <em>both</em> retrievers on every
+      query — dense for meaning, BM25 for exact terms — and merge. But merging raises a
+      trap: a cosine similarity of 0.83 and a BM25 score of 7.1 live on incomparable
+      scales. Adding or averaging them is numerology.
+    </p>
+    <p>
+      The clean merge ignores scores entirely and uses <strong>ranks</strong> —
+      Reciprocal Rank Fusion. Each chunk earns
+      <code>Σ 1 / (60 + rank)</code> across every list it appears in:
+    </p>
+    <pre><code><span class="c-cm"># chunk ranked 1st by dense, 3rd by BM25:</span>
+score = 1/(60+1) + 1/(60+3) = 0.0323   <span class="c-cm"># liked by both → rises</span>
+<span class="c-cm"># chunk ranked 1st by dense only:</span>
+score = 1/(60+1)            = 0.0164   <span class="c-cm"># loved by one → beaten</span></code></pre>
+    <p>
+      A chunk both retrievers liked outranks a chunk either loved alone — which is the
+      behavior you actually want, since the two fail so differently. The constant 60
+      just softens the top ranks' dominance; nobody tunes it, everybody uses it.
+    </p>
+    <p>
+      One deflationary note from measurement: hybrid is a <em>refinement</em>, not the
+      rescue. On the benchmark corpus, plain-chunk hybrid still scores ~0% — BM25
+      matches the company name only in title chunks, which contain the name but not the
+      metric, and fusion faithfully inherits the confusion. Garbage ranked two ways is
+      still garbage. The blurb is what makes hybrid worth having.
+    </p>
+  </section>
+
+  <section id="rerank" class="measure">
+    <h2><span class="sn">08</span>Reranking: similarity is not relevance</h2>
+    <p>
+      Retrieval scores <em>how close</em> a chunk is to the query; it can't tell whether
+      the chunk actually <em>answers</em> it. After fusion, the top candidates for a
+      Borealis-Q2-revenue question typically include Borealis Q1's revenue section and
+      Borealis Q2's margin section — all near, only one right. A
+      <strong>reranker</strong> fixes this: it reads the query and the candidates
+      <em>together</em> and reorders by answer-likelihood. One cheap listwise LLM call
+      over the top ~30 fused candidates is enough; hosted cross-encoders are the
+      higher-throughput alternative.
+    </p>
+    <div class="callout">
+      <div class="co-title">Measured lesson — rerank the contextual text</div>
+      <p>
+        The reranker must be shown <strong>blurb + chunk</strong>, not the bare chunk.
+        In an early version of the implementation it saw bare chunks — and it made
+        results <em>worse</em> (Pass@5 fell 94% → 81%): out-of-context chunks are as
+        indistinguishable to a reranker as they were to the retrievers, so it
+        confidently reshuffled twelve identical-looking revenue chunks. Shown the
+        contextual text, the same reranker became the best stage in the pipeline.
+        The lesson generalizes: <em>every stage that judges a chunk needs the chunk's
+        context to judge it.</em>
+      </p>
+    </div>
+    <p>
+      Engineering note: LLM rerankers are flaky — they garble indices and forget
+      candidates. Treat their output defensively: drop invalid indices, append
+      forgotten candidates in their original order. A flaky reranker may reorder your
+      results; it must never be able to <em>lose</em> one.
+    </p>
+  </section>
+
+  <section id="grounded" class="measure">
+    <h2><span class="sn">09</span>Grounded answers</h2>
+    <p>
+      The last stage hands the top chunks — original text only, per §4 — to the answer
+      model as numbered sources, under a contract: <em>use only these sources; cite
+      inline as [S1], [S2]; if the sources don't contain the answer, say so plainly.</em>
+      Every <code>[S#]</code> resolves to a document, page, and section, so every claim
+      is checkable.
+    </p>
+    <p>
+      The contract matters most when retrieval <em>fails</em>. Watch both pipelines
+      answer “How much did Borealis Industries' revenue grow in Q2 2025?”:
+    </p>
+    <div class="qa">
+      <div class="card">
+        <div class="who">Plain pipeline — retrieval failed</div>
+        <p>“The provided sources do not include Borealis Industries' revenue figures
+        for Q2 2025, so I can't determine how much revenue grew from them alone.
+        [S1] [S3]”</p>
+      </div>
+      <div class="card win">
+        <div class="who">Contextual pipeline — retrieval succeeded</div>
+        <p>“Borealis Industries' total revenue grew <strong>14% year over year</strong>
+        in Q2 2025, reaching <strong>$595 million</strong> for the quarter [S2].”</p>
+      </div>
+    </div>
+    <p>
+      The plain pipeline retrieved the wrong chunks — and <strong>refused rather than
+      hallucinated</strong>. That's the grounding contract holding under failure. The
+      contextual pipeline retrieved the right chunk and answered with the exact figure
+      and a citation that resolves to the right section. Retrieval quality and answer
+      honesty are separate systems; you want both.
+    </p>
+  </section>
+
+  <section id="proof" class="measure">
+    <h2><span class="sn">10</span>The proof</h2>
+    <p>
+      Does it work? Here is an A/B measurement designed to isolate exactly one
+      variable. Corpus: 12 synthetic quarterly reports (3 companies × 4 quarters),
+      structurally identical, differing only in their numbers — and, like real filings,
+      never repeating the company name inside section bodies. 36 queries of the form
+      “How much did {company}'s {metric} change in {quarter}?”, gold chunks computed
+      by construction. Both conditions index the <em>identical</em> chunks with the
+      identical models; the only difference is whether the blurb was prepended.
+      <strong>Pass@k</strong>: did any gold chunk make the top k?
+    </p>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Configuration</th><th class="num">Pass@1</th><th class="num">Pass@3</th><th class="num">Pass@5</th></tr>
+      <tr><td>Plain chunks — dense only</td><td class="num">0.0%</td><td class="num">2.8%</td><td class="num">2.8%</td></tr>
+      <tr><td>Plain chunks — hybrid</td><td class="num">0.0%</td><td class="num">0.0%</td><td class="num">2.8%</td></tr>
+      <tr><td>Contextual — dense only</td><td class="num">55.6%</td><td class="num">80.6%</td><td class="num">91.7%</td></tr>
+      <tr><td>Contextual — hybrid</td><td class="num">66.7%</td><td class="num">86.1%</td><td class="num">91.7%</td></tr>
+      <tr class="hl"><td>Contextual — hybrid + rerank</td><td class="num">91.7%</td><td class="num">97.2%</td><td class="num">97.2%</td></tr>
+    </table>
+    </div>
+    <p>
+      Read it bottom-up. Retrieval failures at k=5 drop from <strong>97.2% to
+      2.8%</strong> — a 97% reduction. The blurb does the heavy lifting (2.8% → 91.7%
+      Pass@5 on dense alone); hybrid earns its keep only <em>after</em> the blurb gives
+      BM25 real terms to match (Pass@1 55.6% → 66.7%); the reranker delivers the
+      decisive precision lift (Pass@1 66.7% → 91.7%).
+    </p>
+    <p>
+      Calibrate against Anthropic's own evaluation on a natural corpus (737 code
+      chunks, 248 queries): Pass@10 rose 87% → 92% with contextual embeddings, ~93%
+      adding BM25, ~95% adding a reranker — a <strong>49% failure reduction (67% with
+      reranking)</strong>. The synthetic numbers above are starker because the corpus
+      is <em>built</em> to maximize chunk ambiguity; real corpora sit in between,
+      closer to Anthropic's figures the more self-contained their chunks already are.
+    </p>
+  </section>
+
+  <section id="limits" class="measure">
+    <h2><span class="sn">11</span>Limits, and when to reach for it</h2>
+    <p>
+      A course that ends in a sales pitch has taught you nothing. The honest boundary
+      conditions:
+    </p>
+    <p>
+      <strong>It targets one failure mode.</strong> Contextual Retrieval repairs
+      chunks that lost their document context. If your chunks are already
+      self-contained — FAQ entries, product descriptions, short standalone notes —
+      the blurbs add cost and near-zero lift. Diagnose first: pull ten random chunks
+      and ask, “could a stranger tell what this is about?” If yes, you don't need this.
+    </p>
+    <p>
+      <strong>It costs real money once.</strong> One LLM call per chunk at ingestion.
+      With caching (§5) it's roughly a tenth of the naïve cost, and it's a one-time
+      capital expense per document — but for a corpus you re-ingest hourly, do that math.
+    </p>
+    <p>
+      <strong>It doesn't fix bad chunking, parsing, or answering.</strong> A blurb
+      can't rescue a chunk that tore a table in half, a PDF whose figures were
+      silently dropped, or an answer model with no grounding contract. It's one stage
+      of a pipeline; the measured 97.2% needed all of them.
+    </p>
+    <p>
+      When the shoe fits, though, it fits remarkably well: long documents that state
+      their identity once and assume it thereafter — filings, contracts, reports,
+      manuals, papers — with questions that name entities the chunks omit. That's a
+      large fraction of the documents enterprises actually care about, and on them
+      this one-sentence-per-chunk technique is among the highest-leverage changes you
+      can make to a RAG system.
+    </p>
+    <footer class="end measure">
+      <p>
+        Continue with <a href="architecture.html">Part 2 — the package, inside out</a>:
+        the architecture of a production-shaped implementation, how to use it, and how
+        to tune it. Or go to the sources: Anthropic's
+        <a href="https://www.anthropic.com/news/contextual-retrieval">blog post</a> and
+        <a href="https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide">cookbook</a>.
+      </p>
+    </footer>
+  </section>
+</main>
+
+<script>
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+    var current = null;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          if (current) current.classList.remove('active');
+          current = byId[e.target.id];
+          if (current) current.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -70% 0px' });
+    document.querySelectorAll('main section[id]').forEach(function (s) { observer.observe(s); });
+  })();
+</script>

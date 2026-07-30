@@ -39,9 +39,9 @@ def ingest_parsed_doc(doc, *, domain_id: str = "default", store: VectorStore | N
     Returns:
         The ingestion report (see module docstring).
     """
-    chunks = chunk_parsed_doc(doc)
-    ctx = contextualize_chunks(doc.markdown, chunks, model=context_model)
     store = store or VectorStore(domain_id)
+    chunks = chunk_parsed_doc(doc, domain_id=store.domain_id)
+    ctx = contextualize_chunks(doc.markdown, chunks, model=context_model)
     n = store.add(ctx)
     return {"doc_id": doc.filename, "pages": doc.pages, "chunks": n,
             "context_tokens": sum(c.total_tokens for c in ctx),
@@ -85,9 +85,9 @@ def ingest_markdown(markdown: str, doc_id: str, *, domain_id: str = "default",
     Returns:
         The ingestion report (see module docstring).
     """
-    chunks = chunk_markdown(markdown, doc_id=doc_id)
-    ctx = contextualize_chunks(markdown, chunks, model=context_model)
     store = store or VectorStore(domain_id)
+    chunks = chunk_markdown(markdown, doc_id=doc_id, domain_id=store.domain_id)
+    ctx = contextualize_chunks(markdown, chunks, model=context_model)
     n = store.add(ctx)
     return {"doc_id": doc_id, "chunks": n,
             "context_tokens": sum(c.total_tokens for c in ctx),

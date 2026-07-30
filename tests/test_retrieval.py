@@ -198,6 +198,17 @@ def test_endpoint_rerank_survives_bad_remote_indices(monkeypatch):
     assert [c.chunk_id for c in ranked] == ["c2", "c0", "c1"]
     assert "rerank" not in chunks[1].scores or chunks[1].scores["rerank"] != 0.7, \
         "negative index must not stamp a score on the wrong chunk"
+    # the cross-encoder's native relevance scores must survive (regression:
+    # _apply_order used to overwrite them with reciprocal ranks)
+    assert chunks[2].scores["rerank"] == 0.9 and chunks[0].scores["rerank"] == 0.1, \
+        "endpoint relevance scores were clobbered"
+
+
+def test_unknown_rerank_mode_raises():
+    """A typo'd mode must fail loudly, not silently spend money on LLM calls."""
+    from contextual_rag.rerank import rerank
+    with pytest.raises(ValueError, match="rerank mode"):
+        rerank("q", [], mode="lm")
 
 
 def test_facade_ask(monkeypatch):
