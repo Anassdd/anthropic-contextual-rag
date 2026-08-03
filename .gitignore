@@ -14,7 +14,7 @@ build/
 .contextual_rag/
 .chroma/
 
-# Local-only notes (Claude session transcripts — contain internal-project context)
+# Local-only working notes (never published)
 notes/
 
 # OS / editors
